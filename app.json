@@ -1,0 +1,7 @@
+{
+  "name": "finaly_project",
+  "displayName": "finaly_project",
+  "expo": {
+    "plugins": ["expo-image-picker"]
+  }
+}

@@ -4,6 +4,9 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 - login, logout, register, changepassword, forgotpassword with email.
 - news-app have share link 
 - chat app one to one and group(send message with socketio, mongoosedb, firebase to send notification).
+- user can filter all user use app and add friend(or delince)
+- group not have feature check accpect join group(group with added friend).
+
 
 
 # Getting Started

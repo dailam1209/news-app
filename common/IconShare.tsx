@@ -1,15 +1,22 @@
 import React from 'react';
 import {View, StyleSheet, TouchableOpacity, Text, Image} from 'react-native';
-import {useAppDispatch, useAppSelector} from '../untils/useHooks';
-import {changeTongle} from '../reducer/tongleShareRedux';
+import { useAppSelector} from '../untils/useHooks';
+import  Share  from 'react-native-share';
 
 const IconShare = () => {
-  const isTrue = useAppSelector(state => state.tongle.tongle);
 
-  const dispatch = useAppDispatch();
+  const url = useAppSelector((state) => state.url.url);
+  // share
   const showValueContext = () => {
-    console.log(isTrue);
-    dispatch(changeTongle(true));
+    onShare()
+  };
+  const onShare = async () => {
+    const options = {
+        message: url,
+        title: "I am sending you application that you may be interested"
+    }
+    Share.open(options).then(
+    ).catch(err => console.log(err))
   };
   return (
     <View>

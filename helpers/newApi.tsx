@@ -6,11 +6,11 @@ interface Params {
 
 
 export const config: Params = {
-    baseUrl: process.env.REACT_APP_API_URL,
+    baseUrl: `http://192.168.0.102:3000`,
     headers: {
         "Authorization": "",
             },
-    method: 'get'
+    method: "get"
 }
 
 

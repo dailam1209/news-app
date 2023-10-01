@@ -7,6 +7,7 @@ import tongleShareRedux from './tongleShareRedux';
 import numberRedux from './numberRedux';
 import newRedux from './News/newRedux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import userRedux from './User/userRedux';
 
 const persistConfig = {
   key: 'root',
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   tongle: tongleShareRedux,
   number: numberRedux,
   listNew: newRedux,
+  user: userRedux
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

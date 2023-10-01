@@ -22,7 +22,7 @@ const ModalShare = () => {
   return (
     <View style={styles.under}>
       <View>
-        <Modal
+        {/* <Modal
           animationType="fade"
           transparent={true}
           visible={isTrue}
@@ -54,7 +54,7 @@ const ModalShare = () => {
               )}
             </View>
           </TouchableOpacity>
-        </Modal>
+        </Modal> */}
       </View>
     </View>
   );

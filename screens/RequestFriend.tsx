@@ -10,48 +10,38 @@ import {
   Animated,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {COLORS, FONTS} from '../constants';
 import UserImage = require('../assets/images/user-image.png');
-
+import  {REACT_APP_API_URL}  from '@env'
 
 export interface RequestFriendProps {
-  token: any,
-  isGet: boolean
+  listUser: any;
+  token: any;
 }
 
-const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
-  const [filteredUsers, setFilteredUsers] = useState<any>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
 
-
-  
-
-  const getData = async () => {
-    const config = {
+  const acceptAddFriend = async (id: string) => {
+    await axios({
+      method: 'post',
+      url: `${REACT_APP_API_URL}/accept-friend/${id}`,
       headers: {Authorization: `Bearer ${token}`},
-    };
-    if (token) {
-      setIsLoading(true);
-      await axios
-        .get('https://news-1.onrender.com/get-all-request-add', config)
-        .then(res => {
-          setFilteredUsers(res.data.listUserRequest);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setFilteredUsers([]);
-          console.log(error);
-        });
-    }
+    })
+      .then(function (response) {
+        if (response.status == 200) {
+          Alert.alert(`Đã thêm bạn mới thành công.`);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
   };
 
   useEffect(() => {
-        console.log('vao');
-        setFilteredUsers([]);
-        getData();
-  }, []);
+    console.log(listUser);
+  }, [listUser]);
 
   const renderItem = ({item, index}: any) => (
     <View
@@ -86,7 +76,11 @@ const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
               marginRight: 10,
             }}>
             <Image
-              source={item.image !== undefined ? {uri: `${item.image}`} : UserImage}
+              source={
+                item.image !== '' && item.image !== undefined
+                  ? {uri: `${item.image}`}
+                  : UserImage
+              }
               resizeMode="contain"
               style={{
                 height: 50,
@@ -100,11 +94,16 @@ const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
               flexDirection: 'column',
             }}>
             <Text style={{...FONTS.h4}}>{item.username}</Text>
-            <Text style={{fontSize: 14, marginBottom: 4, color: COLORS.secondaryGray}}>
+            <Text
+              style={{
+                fontSize: 14,
+                marginBottom: 4,
+                color: COLORS.secondaryGray,
+              }}>
               {item.email}
             </Text>
-            <Text style={{fontSize: 14,  color: COLORS.secondaryGray}}>
-              {/* {formatDate(item.date)} */}
+            <Text style={{fontSize: 14, color: COLORS.secondaryGray}}>
+              {item.date ? formatDate(item.date) : ''}
             </Text>
           </View>
         </TouchableOpacity>
@@ -132,12 +131,13 @@ const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
               height: 40,
               lineHeight: 40,
               textAlign: 'center',
-              color: 'white'
+              color: 'white',
             }}>
             Declines
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          onPress={() => acceptAddFriend(item._id)}
           style={{
             width: 70,
             height: 40,
@@ -154,7 +154,7 @@ const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
               height: 40,
               lineHeight: 40,
               textAlign: 'center',
-              color: 'white'
+              color: 'white',
             }}>
             Accept
           </Text>
@@ -165,34 +165,16 @@ const RequestFriend: React.FC<RequestFriendProps> = ({ isGet, token}) => {
 
   return (
     <SafeAreaView style={{flex: 1}}>
-      {isLoading ? (
-        <View
-          style={{
-            position: 'absolute',
-            zIndex: 10,
-            left: 0,
-            right: 0,
-            top: -100,
-            bottom: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(100, 100, 100, 0.6)',
-          }}>
-          <ActivityIndicator size="large" />
-          <Text style={{fontSize: 18, marginTop: 12}}>Loading...</Text>
-        </View>
-      ) : (
         <View
           style={{
             paddingBottom: 100,
           }}>
           <FlatList
-            data={filteredUsers}
+            data={listUser}
             renderItem={renderItem}
             keyExtractor={item => item._id.toString()}
           />
         </View>
-      )}
     </SafeAreaView>
   );
 };

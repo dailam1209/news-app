@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "axios";
+import  {REACT_APP_API_URL}  from '@env'
 import { Alert } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -9,11 +10,11 @@ interface RefreshTokenProps {
     refreshToken: string,
 }
 
-const RefreshTokenAgain: React.FC<RefreshTokenProps> = async ( requestConfig, refreshToken) => {
+const RefreshTokenAgain: React.FC<RefreshTokenProps> = async (requestConfig, refreshToken) => {
     try {
-        console.log(requestConfig, refreshToken);
+        console.log("ben refreshToken",requestConfig, refreshToken);
         if(refreshToken) {
-            await axios.post('https://news-1.onrender.com/refresh-token', { refreshToken: refreshToken })
+            await axios.post(`${REACT_APP_API_URL}/refresh-token`, { refreshToken: refreshToken })
             .then(async (response) => {
                 if(response.status == 200) {
                     const newAccessToken = response?.data?.accessToken;
@@ -24,12 +25,14 @@ const RefreshTokenAgain: React.FC<RefreshTokenProps> = async ( requestConfig, re
                 // Lưu trữ accessToken mới
                 // Thực hiện lại yêu cầu trước
                 requestConfig.headers = {
-                        Authorization: `Bearer ${response?.data?.accessToken}`,
-                        "content-type": "multipart/form-data"
+                        Authorization: `Bearer ${response?.data?.accessToken}`
                 };
+            //     requestConfig.headers = {
+            //         Authorization: `Bearer ${response?.data?.accessToken}`,
+            //         // "content-type": "multipart/form-data"
+            // };
                 await axios(requestConfig as any)
                 .then((response) => {
-                    console.log('response',response);
                     return response;
                 })
                 .catch((error) => {

@@ -1,5 +1,6 @@
 import {useRef, useState, useEffect} from 'react';
-import {ActivityIndicator} from 'react-native';
+import {ActivityIndicator, Alert, ImageBackground} from 'react-native';
+import  {REACT_APP_API_URL}  from '@env'
 import 'react-native-gesture-handler';
 import {
   Pressable,
@@ -9,6 +10,7 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
+  ToastAndroid
 } from 'react-native';
 import {BottomSheetModal, BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -22,17 +24,22 @@ import LinearGradient from 'react-native-linear-gradient';
 import axios from 'axios';
 import RefreshTokenAgain from '../untils/handleRefreshToken';
 import {useIsFocused} from '@react-navigation/native';
+import InputField from '../components/InputFiled';
+import Toast from 'react-native-toast-message';
+import CameraSVG from '../assets/misc/camera-icon.svg';
+import { getImage, getEmail, getId, getPhone, getToken, getUsername, getRefreshToken } from '../helpers/userApi';
 
 const snapPoints = ['48%'];
 
 export default function EditProfile() {
+  
   const isFocused = useIsFocused();
-
-  const [selectImage, setSelectedImage] = useState<any>();
-
-  const [username, setUsername] = useState<String>('lamdai');
-  const [email, setEmail] = useState<String>('lamdia1209@gmail.com');
-  const [phone, setPhone] = useState<any>('998483242643');
+  const [username, setUsername] = useState<String>('');
+  const [email, setEmail] = useState<String>('');
+  const [phone, setPhone] = useState<String>('');
+  const [errorPhone, setErrorPhone] = useState<String>('');
+  const [errorEmail, setErrorEmail] = useState<String>('');
+  const [errorName, setErrorName] = useState<String>('');
   const [token, setToken] = useState<String>();
   const [refreshToken, setRefreshToken] = useState<String>();
   const [idUser, setIdUser] = useState<String>();
@@ -40,100 +47,60 @@ export default function EditProfile() {
   const [isOpen, setIsOpen] = useState(false);
   const bottomSheetModalRef = useRef(null);
   const [image, setImage] = useState<any>('');
-  const urlHost = '/update';
-  const baseUrlGet = 'https://news-1.onrender.com/upload';
-
-  const [isHaveImage, setIsHaveImage] = useState(false);
-  const [imageData, setImageData] = useState(null);
-
-  // get image in storage
-  const getImage = async () => {
-    const imageUser = await getLocalStorage('image');
-    if (typeof imageUser === typeof 'string' && imageUser !== null) {
-      setImage(imageUser.replace(/"/g, ''));
-      setIsHaveImage(true);
-    } else {
-      setIsHaveImage(false);
-      setImage(UserImage);
-    }
-  };
-
-  // get userName in storage
-  const getUsername = async () => {
-    const name = await getLocalStorage('username');
-    if (typeof name === typeof 'asdasdf' && name !== null) {
-      setUsername(name.replace(/"/g, ''));
-    } else {
-      setUsername('');
-    }
-  };
-
-  // get email in storage
-  const getEmail = async () => {
-    const emailUser = await getLocalStorage('email');
-    if (typeof emailUser === typeof 'asdasdf' && emailUser !== null) {
-      setEmail(emailUser.replace(/"/g, ''));
-    } else {
-      setEmail('');
-    }
-  };
-
-  const getPhone = async () => {
-    const phoneUser = await getLocalStorage('phone');
-    if (typeof phoneUser === typeof 'asdasdf' && phoneUser !== null) {
-      setPhone(phoneUser.replace(/"/g, ''));
-    } else {
-      setPhone('');
-    }
-  };
-
-  const getToken = async () => {
-    const tokenUser = await getLocalStorage('token');
-    if (typeof tokenUser === typeof 'asdasdf' && tokenUser !== null) {
-      setToken(tokenUser.replace(/"/g, ''));
-    } else {
-      setToken('');
-    }
-  };
-
-  // get refresh token
-  const getRefreshToken = async () => {
-    const refreshTokenUser = await getLocalStorage('refresh-token');
-    if (
-      typeof refreshTokenUser === typeof 'asdasdf' &&
-      refreshTokenUser !== null
-    ) {
-      setRefreshToken(refreshTokenUser.replace(/"/g, ''));
-    } else {
-      setRefreshToken('');
-    }
-  };
-
-  // get id
-  const id = async () => {
-    const getId = await getLocalStorage('_id');
-    if (typeof getId === typeof 'asdasdf' && getId !== null) {
-      setIdUser(getId.replace(/"/g, ''));
-    } else {
-      setIdUser('');
-    }
-  };
 
   // change name
   const changeName = e => {
     setUsername(e);
   };
+  const usernameOnblur = () => {
+    if(username.length <= 4) {
+      setErrorName('Please enter username more than 4 characters.');
+      return false;
+    } else {
+      setErrorName('');
+      setUsername(username)
+      return true;
+    }
+  };
 
   // change email
-  const changeEmail = e => {
+  const emailChange = (e: string) => {
     setEmail(e);
   };
 
-  // change phone
-  const changePhone = e => {
-    setPhone(e);
+  //change phone
+  const phoneChange = (value: string) => {
+    console.log('phone change', value);
+    setPhone(value);
   };
 
+  // change phone
+  const phoneOnblur = () => {
+    console.log('onBlur', phone);
+    let regexPhone = /\(?([0-9]{3})\)?([ .-]?)([0-9]{3})\2([0-9]{4})/;
+    console.log('regexPhone.test(phone as any)', regexPhone.test(phone as any));
+    if (regexPhone.test(phone as string) === false && phone == '') {
+      setErrorPhone('Please enter again phone number.');
+      return false;
+    } else {
+      setErrorPhone('');
+      setPhone(phone as string);
+      return true;
+    }
+  };
+
+  const emailOnblur = () => {
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+    if (reg.test(email as string) === false) {
+      setErrorEmail('Please enter email again.');
+      return false;
+    } else {
+      setEmail('');
+      setErrorEmail('');
+      emailChange(email as string);
+      return true;
+    }
+  };
 
   function handlePresentModal() {
     addImage();
@@ -148,17 +115,33 @@ export default function EditProfile() {
   const addImage = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
-      quality: 1,
+      // quality: 1,
       includeBase64: false,
       // maxHeight: 200,
       // maxWidth: 200,
     });
     if (result.didCancel && result.didCancel == true) {
     } else {
-      setImageData(result as any);
-      setImage(result?.assets[0]?.uri as any);
+      setImage(result?.assets[0]?.uri as string);
     }
   };
+
+  const getAllvalueLocal = async () => {
+    let newImage = await getImage();
+    let newId = await getId();
+    let newToken = await getToken();
+    let newRefreshToken = await getRefreshToken();
+    let newPhone = await getPhone();
+    let newUsername = await getUsername();
+    let newEmail = await getEmail();
+    setImage(newImage);
+    setIdUser(newId as string);
+    setToken(newToken);
+    setRefreshToken(newRefreshToken as string);
+    setPhone(newPhone as string);
+    setUsername(newUsername as string);
+    setEmail(newEmail as string);
+  }
 
   // submit profile
   const submmitUpdateProfile = async () => {
@@ -170,6 +153,7 @@ export default function EditProfile() {
     };
 
     const form = new FormData();
+    console.log('phone', phone);
     form.append('avatar', photo as any);
     form.append('username', username as string);
     form.append('phone', phone as any);
@@ -182,7 +166,7 @@ export default function EditProfile() {
     };
     try {
       const response = await axios.put(
-        `https://news-1.onrender.com/upload/update/${idUser}`,
+        `${REACT_APP_API_URL}/upload/update/${idUser}`,
         form,
         config,
       );
@@ -195,34 +179,30 @@ export default function EditProfile() {
         setIsLoading(false);
       }
     } catch (error) {
-      if (error.message.slice(-3) == 401) {
+      // if (error.message.slice(-3) == 401) {
+      //   console.error('Sai o buoc 1:', error);
+      //   const newConfig = {
+      //     url: urlHost,
+      //     method: 'put',
+      //     baseURL: baseUrlGet,
+      //     data: form,
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //       'content-type': 'multipart/form-data',
+      //     },
+      //   };
+      //   await RefreshTokenAgain(newConfig as any, refreshToken);
+      // } else {
+
         console.error('Sai o buoc 1:', error);
-        const newConfig = {
-          url: urlHost,
-          method: 'put',
-          baseURL: baseUrlGet,
-          data: form,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'content-type': 'multipart/form-data',
-          },
-        };
-        await RefreshTokenAgain(newConfig as any, refreshToken);
-      } else {
-        console.error('Sai o buoc 1:', error);
-      }
+      // }
       setIsLoading(false);
     }
   };
 
+
   useEffect(() => {
-    getImage();
-    getUsername();
-    getEmail();
-    getPhone();
-    getToken();
-    id();
-    getRefreshToken();
+    getAllvalueLocal()
   }, [isFocused]);
 
   return (
@@ -230,7 +210,7 @@ export default function EditProfile() {
       <View
         style={{
           marginTop: 20,
-          height: '100vh',
+          height: 'auto',
         }}>
         {/*  image and name */}
         <View
@@ -251,34 +231,36 @@ export default function EditProfile() {
               overflow: 'hidden',
               alignItems: 'center',
             }}>
-            <Image
-              source={isHaveImage ? {uri: `${image}`} : UserImage}
+            <ImageBackground
+              source={image ? {uri: `${image}`} : UserImage}
               resizeMode="cover"
               style={{
                 height: 100,
                 width: 100,
               }}
               imageStyle={{borderRadius: 50}}>
-              {/* <View style={{
+              <View style={{
+                flexDirection: 'column',
+                justifyContent: 'center',
                 width: 100,
                 height: 100,
                 position: 'absolute',
-                alignItems: 'center'
+                alignItems: 'center',
               }}>
                   <CameraSVG
-                    color=''
+                    color='white'
                     style={{
-                      width:  50,
-                      height: 100
+                      width:  30,
+                      height: 30
                     }}
                   />
-              </View> */}
-            </Image>
+              </View>
+            </ImageBackground>
           </TouchableOpacity>
           <Text
             style={{
               fontSize: 22,
-              fontWeight: 600,
+              fontWeight: '600',
               marginTop: 10,
             }}>
             {username}
@@ -292,127 +274,111 @@ export default function EditProfile() {
           }}>
           <View
             style={{
-              display: 'block',
               width: '100%',
               height: 'auto',
-              marginTop: 10,
+              marginTop: 20,
               alignContent: 'center',
             }}>
-            <Image
-              source={{
-                uri: 'https://img.icons8.com/fluency-systems-regular/48/000000/user--v1.png',
-              }}
-              resizeMode="contain"
-              style={{
-                height: 40,
-                width: 24,
-                borderRadius: 25,
-                alignItems: 'center',
-                marginRight: 8,
-                tintColor: '#DE6C6C',
-              }}
-            />
+            <Text style={styles.textAboveInput}>Username:</Text>
             <View
               style={{
                 height: 40,
               }}>
-              <TextInput
-                placeholder="Name"
-                autoCorrect={false}
-                value={username as string}
-                onChange={value => changeName(value)}
-                style={{
-                  height: 40,
-                  textAlign: 'left',
-                  borderRadius: 8,
-                  borderColor: '#e6edff',
-                  borderWidth: 1,
-                  paddingLeft: 10,
-                }}
+              <InputField
+                label={username}
+                icon={
+                  <Image
+                    source={{
+                      uri: 'https://img.icons8.com/fluency-systems-regular/48/000000/user--v1.png',
+                    }}
+                    resizeMode="contain"
+                    style={styles.image}
+                  />
+                }
+                icon1={''}
+                icon2={''}
+                isChange={false}
+                isBorderRadius={true}
+                keyboardType={undefined}
+                inputType={undefined}
+                fieldButtonFunction={() => {}}
+                value={username}
+                error={errorName}
+                onBlur={() => usernameOnblur()}
+                valueChangeFunction={changeName}
               />
             </View>
           </View>
           <View
             style={{
-              display: 'block',
               width: '100%',
               height: 'auto',
-              marginTop: 10,
+              marginTop: 20,
               alignContent: 'center',
             }}>
-            <Image
-              source={{
-                uri: 'https://img.icons8.com/material-outlined/24/000000/new-post.png',
-              }}
-              resizeMode="contain"
-              style={{
-                height: 40,
-                width: 24,
-                borderRadius: 25,
-                alignItems: 'center',
-                marginRight: 8,
-                tintColor: '#DE6C6C',
-              }}
-            />
+            <Text style={styles.textAboveInput} >Email:</Text>
             <View
               style={{
                 height: 40,
               }}>
-              <TextInput
-                placeholder="Email"
-                autoCorrect={false}
-                value={email as string}
-                onChange={value => changeEmail(value)}
-                style={{
-                  height: 40,
-                  textAlign: 'left',
-                  borderRadius: 8,
-                  borderColor: '#e6edff',
-                  borderWidth: 1,
-                  paddingLeft: 10,
-                }}></TextInput>
+              <InputField
+                label={email}
+                icon={
+                  <Image
+                    source={{
+                      uri: 'https://img.icons8.com/material-outlined/24/000000/new-post.png',
+                    }}
+                    resizeMode="contain"
+                    style={styles.image}
+                  />
+                }
+                icon1={''}
+                icon2={''}
+                isChange={false}
+                isBorderRadius={true}
+                keyboardType="number-pad"
+                inputType={Number}
+                fieldButtonFunction={() => {}}
+                value={email}
+                error={errorEmail}
+                onBlur={() => emailOnblur()}
+                valueChangeFunction={emailChange}
+              />
             </View>
           </View>
           <View
             style={{
-              display: 'block',
+              justifyContent: 'center',
               width: '100%',
               height: 'auto',
-              marginTop: 10,
+              marginTop: 20,
               alignContent: 'center',
             }}>
-            <Image
-              source={{
-                uri: 'https://img.icons8.com/fluency-systems-regular/48/000000/phone.png',
-              }}
-              resizeMode="contain"
-              style={{
-                height: 40,
-                width: 24,
-                borderRadius: 25,
-                alignItems: 'center',
-                marginRight: 8,
-                tintColor: '#DE6C6C',
-              }}
-            />
-            <View
-              style={{
-                height: 40,
-              }}>
-              <TextInput
-                placeholder="Phone"
+            <Text style={styles.textAboveInput}>Phone:</Text>
+            <View>
+              <InputField
+                label={phone}
+                icon={
+                  <Image
+                    source={{
+                      uri: 'https://img.icons8.com/fluency-systems-regular/48/000000/phone.png',
+                    }}
+                    resizeMode="contain"
+                    style={styles.image}
+                  />
+                }
+                icon1={''}
+                icon2={''}
+                isChange={false}
+                isBorderRadius={true}
                 keyboardType="number-pad"
-                autoCorrect={false}
+                inputType={Number}
+                fieldButtonFunction={() => {}}
                 value={phone}
-                onChange={value => changePhone(value)}
-                style={{
-                  height: 40,
-                  textAlign: 'left',
-                  borderRadius: 8,
-                  borderColor: '#e6edff',
-                  borderWidth: 1,
-                  paddingLeft: 10,
-                }}></TextInput>
+                error={errorPhone}
+                onBlur={() => phoneOnblur()}
+                valueChangeFunction={phoneChange}
+              />
             </View>
           </View>
           <View
@@ -559,4 +525,22 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
     width: '100%',
   },
+  image: {
+    height: 40,
+    width: 24,
+    marginRight: 8,
+    tintColor: '#DE6C6C',
+  },
+  input: {
+    height: 40,
+    textAlign: 'left',
+    borderRadius: 8,
+    borderColor: '#e6edff',
+    borderWidth: 1,
+    paddingLeft: 10,
+  },
+  textAboveInput: {
+      fontSize: 16,
+      fontWeight: '600'
+  }
 });

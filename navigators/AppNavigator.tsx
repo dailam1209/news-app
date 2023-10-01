@@ -11,11 +11,11 @@ import Login from '../screens/Login';
 import Register from '../screens/Register';
 import ForgotPassword from '../screens/ForgotPassword';
 import ChangePass from '../screens/ChangePass';
-import { Chats, Contacts, More } from '../screens';
 import ProfileUser from '../screens/ProfileUser';
 import EditProfile from '../screens/EditProfile';
 import PersonalChat from '../screens/PersonalChat';
 import AddFriend from '../screens/AddFriend';
+import AddGroup from '../screens/AddGroup';
 
 const Stack = createStackNavigator();
 
@@ -58,7 +58,6 @@ function AppNavigator() {
           name="Home"
           options={{
             title: 'VietNam News Online',
-            // headerShown: false,
             headerRight: () => (
               <View>
                 <TouchableOpacity onPress={() => handleShareIcon()}>
@@ -157,6 +156,19 @@ function AppNavigator() {
           }}
         />
         <Stack.Screen
+          name="AddGroup"
+          component={AddGroup}
+          options={{
+            headerRight: () => (
+              <View>
+                <TouchableOpacity onPress={() => handleShareIcon()}>
+                  <IconShare />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+        />
+        <Stack.Screen
           name="PersonalChat"
           component={PersonalChat}
           options={{
@@ -191,6 +203,20 @@ function AppNavigator() {
             ),
           }}
           component={Detail}
+        />
+        <Stack.Screen
+          name="Login"
+          options={{
+            title: 'VietNam News Online',
+            headerRight: () => (
+              <View>
+                <TouchableOpacity onPress={() => handleShareIcon()}>
+                  <IconShare />
+                </TouchableOpacity>
+              </View>
+            ),
+          }}
+          component={Login}
         />
       </Stack.Navigator>
     </NavigationContainer>

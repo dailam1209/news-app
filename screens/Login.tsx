@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Text, SafeAreaView, View, TouchableOpacity, ActivityIndicator} from 'react-native';
+import {Text, SafeAreaView, View, TouchableOpacity, ActivityIndicator, Alert} from 'react-native';
 import InputField from '../components/InputFiled';
 import {MaterialIcons} from '@expo/vector-icons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -13,13 +13,16 @@ import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch } from '../untils/useHooks';
+import { emailRegex, passwordRegex } from '../untils/regex';
+import  {REACT_APP_API_URL}  from '@env'
 
 interface LoginProps {
   navigation: any;
 }
 
 const Login: React.FC<LoginProps> = ({navigation}) => {
-  const [changeEye, setChangeEye] = useState(false);
+  const [changeEye, setChangeEye] = useState(true);
   const [ isLoading, setIsLoading ] = useState(false);
 
   const [ errorEmail, setErrorEmail ] = useState<String>('');
@@ -27,6 +30,8 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
 
   const [email, setEmail] = useState<String>('');
   const [password, setPassword] = useState<String>('');
+
+  const dispatch = useAppDispatch();
 
   const emailChange = (value: string) => {
     setEmail(value);
@@ -37,67 +42,72 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   };
 
   const emailOnblur = () => {
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-    if (reg.test(email as string) === false) {
+    if (emailRegex.test(email as string) === false) {
       setErrorEmail('Please enter email again.')
       return false;
     }
     else {
       setEmail('');
+      setErrorEmail('')
       emailChange(email as string);
       return true;
     }
   };
 
   const passwordOnblur = () => {
-    let reg = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[^\w\s]).{8,}$/
-    if(!password || password.length < 8 || reg.test(password as string) === false) {
+    if(!password || password.length < 8 || passwordRegex.test(password as string) === false) {
       setErrorPassword('Please enter password same: Lamdai1209@');
       return false;
     } else {
       setErrorPassword('');
+      setErrorPassword('')
       passChange(password as string);
       return true;
     }
   }
 
+
+  // submitLogin
   const submitHandle = async () => {
 
     const isEmail = emailOnblur();
     const isPassword = passwordOnblur();
-    if(isEmail && isPassword) {
-      setIsLoading(true);
-      const user = await axios({
-        method: 'post',
-        url: "https://news-1.onrender.com/login",
-        headers: {
-          
-        },
-        data: {
-          email: email,
-          password: password
-        }
-      });
-      if(user.status == 200) {
-        setIsLoading(false);
-        AsyncStorage.setItem("username", JSON.stringify(user.data.user.username));
-        AsyncStorage.setItem("_id", JSON.stringify(user.data.user._id));
-        AsyncStorage.setItem("refresh-token", JSON.stringify(user.data.user.refreshToken));
-        AsyncStorage.setItem("token", JSON.stringify(user.data.token));
-        AsyncStorage.setItem("image", JSON.stringify(user.data.user.image));
-        AsyncStorage.setItem("email", JSON.stringify(user.data.user.email));
-        AsyncStorage.setItem("phone", JSON.stringify(user.data.user.phone));
-        
-        navigation.navigate('Home'); 
-      }
-    } else {
-      console.log('Fail');
+    try {
+      if(isEmail && isPassword) {
+        setIsLoading(true);
+        await axios({
+          method: 'post',
+          url: `${REACT_APP_API_URL}/login`,
+          headers: {
+          },
+          data: {
+            email: email,
+            password: password
+          },
+        }).then((res) => {
+  
+          if(res.status == 200) {
+            setIsLoading(false);
+            AsyncStorage.setItem("username", JSON.stringify(res.data.user.username));
+            AsyncStorage.setItem("_id", JSON.stringify(res.data.user._id));
+            AsyncStorage.setItem("refresh-token", JSON.stringify(res.data.user.refreshToken));
+            AsyncStorage.setItem("token", JSON.stringify(res.data.token));
+            AsyncStorage.setItem("image", JSON.stringify(res.data.user.image));
+            AsyncStorage.setItem("email", JSON.stringify(res.data.user.email));
+            AsyncStorage.setItem("phone", JSON.stringify(res.data.user.phone));
+            AsyncStorage.setItem("create-at", JSON.stringify(res.data.user.expiresIn));
+            navigation.navigate('Home'); 
+          }
+        })
+      } 
+    } catch (error) {
+      setIsLoading(false);
+      Alert.alert(`${error.message}`)
     }
 
   }
 
   const tongleChangeEye = () => {
-    console.log('change');
     setChangeEye(!changeEye);
   };
   return (
@@ -155,7 +165,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             keyboardType={undefined}
             value={email}
             error={errorEmail}
-            onBlur={emailOnblur}
+            onBlur={() => emailOnblur()}
             valueChangeFunction={emailChange}
           />
           <InputField
@@ -195,7 +205,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             fieldButtonFunction={() => tongleChangeEye()}
             keyboardType={undefined}
             value={password}
-            error={errorEmail}
+            error={errorPassword}
             onBlur={passwordOnblur}
             valueChangeFunction={passChange}
           />

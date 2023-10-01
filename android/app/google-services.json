@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "242087233692",
+    "project_id": "chat-app-news",
+    "storage_bucket": "chat-app-news.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:242087233692:android:b78103a094badb33f40559",
+        "android_client_info": {
+          "package_name": "com.finaly_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuRb1bo9Isu3MuO2PA39JNyULJFj9zxfM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

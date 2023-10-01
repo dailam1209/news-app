@@ -1,14 +1,15 @@
-/**
- * @format
- */
-
 import {AppRegistry} from 'react-native';
 import App from './App';
 import { LogBox } from 'react-native';
 import {name as appName} from './app.json';
 import { Provider } from 'react-redux';
 import { store, persistor } from './reducer/store';
-import { PersistGate } from 'redux-persist/integration/react'
+import { PersistGate } from 'redux-persist/integration/react';
+import messaging from '@react-native-firebase/messaging';
+
+messaging().setBackgroundMessageHandler( async message => {
+    console.log(message);
+})
 
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore log notification by message
 LogBox.ignoreAllLogs(); //Ignore all log notifications
@@ -22,3 +23,4 @@ const ReduxProvider = () => {
     )
 }
 AppRegistry.registerComponent(appName, () => ReduxProvider);
+

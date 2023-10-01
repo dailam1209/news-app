@@ -15,12 +15,12 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
 import {COLORS, FONTS} from '../constants';
 import {AntDesign, Ionicons} from '@expo/vector-icons';
-import { contacts } from '../constants/data';
 import UserImage = require('../assets/images/user-image.png');
 import UserCount = require('../assets/images/count-user-image.png');
 import {useDebounce} from '../untils/useDebounce';
 import axios from 'axios';
 import {getLocalStorage} from '../untils/getLocalStorage';
+import  {REACT_APP_API_URL}  from '@env'
 
 const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
   const [search, setSearch] = useState('');
@@ -110,7 +110,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
           </Text>
         </View>
       </View>
-      <View>
+      <View style={{ marginVertical: 20}}>
         {!item.isFriend ? (
           <TouchableOpacity
           onPress={() => addFriendRequest(item.id)}
@@ -133,6 +133,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
           <>
           </>
         )}
+       
       </View>
     </View>
   );
@@ -152,7 +153,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
   };
     const data = {}
     try {
-      const postAdd = await axios.post(`https://news-1.onrender.com/add-friend/${idAdd}`,data, config);
+      const postAdd = await axios.post(`${REACT_APP_API_URL}/add-friend/${idAdd}`,data, config);
       if(postAdd.status == 200 ){
         Alert.alert('Send add friend successfully.')
       }
@@ -174,7 +175,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
   };
     setIsLoading(true);
     const listUser = await axios.get(
-      `https://news-1.onrender.com/search?name=${debounce}`,
+      `${REACT_APP_API_URL}/search?name=${debounce}`,
       config,
     );
     if (listUser.status == 200) {

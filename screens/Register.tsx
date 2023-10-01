@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import  {REACT_APP_API_URL}  from '@env'
 import {Text, SafeAreaView, View, TouchableOpacity, ToastAndroid} from 'react-native';
 import InputField from '../components/InputFiled';
 import {MaterialIcons} from '@expo/vector-icons';
@@ -28,8 +29,8 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
   const [ errorConfirm, setErrorConfirm] = useState<String>('');
 
   //icon
-  const [changeEye1, setChangeEye1] = useState<any>(false);
-  const [changeEye2, setChangeEye2] = useState<any>(false);
+  const [changeEye1, setChangeEye1] = useState<any>(true);
+  const [changeEye2, setChangeEye2] = useState<any>(true);
 
   // value
   const [username, setUsername] = useState<String>('');
@@ -69,9 +70,8 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
       if(isUser && isEmail && isPassword) {
         const register = await axios({
           method: 'post',
-          url: "https://news-1.onrender.com/register",
+          url: `${REACT_APP_API_URL}/register`,
           headers: {
-            
           },
           data: {
             username: username,
@@ -80,7 +80,7 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
           }
         });
         console.log(register.status);
-        if(register.data.success === true && register.status == 200) {
+        if(register.data.success == true && register.status == 200) {
           showToast(message);
           setInterval(() => {
             navigation.navigate('Login'); 
@@ -135,7 +135,6 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
 
   const confirmPasswordOnblur = () => {
     if(!confirmPassword || password !== confirmPassword) {
-      console.log('no match pass');
       setErrorConfirm('Please enter confirmpassword again.');
       return false;
     } else {
@@ -192,84 +191,67 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
           {/* user name */}
           <InputField
             label={'User name'}
-            icon={
-              <UserSVG
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<UserSVG
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             icon1={''}
             icon2={''}
             isChange={false}
-            fieldButtonFunction={() => {}}
+            fieldButtonFunction={() => { } }
             inputType={undefined}
             keyboardType={undefined}
             value={undefined}
             error={erroName}
             onBlur={usernameOnblur}
-            valueChangeFunction={userChange}
-          />
+            valueChangeFunction={userChange} isBorderRadius={undefined}          />
           {/* Email */}
           <InputField
             label={'Email ID'}
-            icon={
-              <EmailSVG
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<EmailSVG
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             icon1={''}
             icon2={''}
             isChange={false}
-            fieldButtonFunction={() => {}}
+            fieldButtonFunction={() => { } }
             inputType={undefined}
             keyboardType={undefined}
             value={undefined}
             error={errorEmail}
             onBlur={emailOnblur}
-            valueChangeFunction={emailChange}
-          />
+            valueChangeFunction={emailChange} isBorderRadius={undefined}          />
           {/* Password */}
           <InputField
             label={'Password'}
-            icon={
-              <Lock
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon1={
-              <Eye
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon2={
-              <Eye2
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<Lock
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon1={<Eye
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon2={<Eye2
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             isChange={changeEye1}
             inputType={changeEye1 ? 'showpass' : 'password'}
             fieldButtonFunction={() => tongleChangeEye(1)}
@@ -277,41 +259,31 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
             value={undefined}
             error={errorPassword}
             onBlur={passwordOnblur}
-            valueChangeFunction={passChange}
-          />
+            valueChangeFunction={passChange} isBorderRadius={undefined}          />
           {/* Confirm Password */}
           <InputField
             label={'Confirm password'}
-            icon={
-              <Lock
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon1={
-              <Eye
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon2={
-              <Eye2
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<Lock
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon1={<Eye
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon2={<Eye2
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             isChange={changeEye2}
             inputType={changeEye2 ? 'showpass' : 'password'}
             fieldButtonFunction={() => tongleChangeEye(2)}
@@ -319,8 +291,7 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
             value={confirmPassword}
             onBlur={confirmPasswordOnblur}
             error={errorConfirm}
-            valueChangeFunction={confirmPassChange}
-          />
+            valueChangeFunction={confirmPassChange} isBorderRadius={undefined}          />
         </View>
         {/* register button */}
         <View

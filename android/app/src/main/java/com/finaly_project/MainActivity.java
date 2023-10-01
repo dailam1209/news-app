@@ -37,18 +37,5 @@ public class MainActivity extends ReactActivity {
         // If you opted-in for the New Architecture, we enable the Fabric Renderer.
         DefaultNewArchitectureEntryPoint.getFabricEnabled());
   }
-      // Required for rn built in EventEmitter Calls.
-// @ReactMethod
-// public void addListener(String eventName) {
-// // Keep: Required for RN built in Event Emitter Calls.
-// mConnectivityReceiver.hasListener = true;
-// }
 
-// @ReactMethod
-// public void removeListeners(Integer count) {
-// // Keep: Required for RN built in Event Emitter Calls.
-// if (count == 0) {
-// mConnectivityReceiver.hasListener = false;
-// }
-// }
 }

@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useState} from 'react';
 import axios from 'axios';
 import {
   SafeAreaView,
@@ -7,63 +7,37 @@ import {
   Image,
   Text,
   TouchableOpacity,
-  Animated,
   StyleSheet,
-  ActivityIndicator
 } from 'react-native';
 import {COLORS, FONTS} from '../constants';
 import UserImage = require('../assets/images/user-image.png');
 import {formatDate} from '../untils/formatDate';
+import  {REACT_APP_API_URL}  from '@env'
 
 
 
 
 export interface SentFriendProps {
-  token: any;
+  listUser: any,
+  token: any
 }
 
-const SentFriend: React.FC<SentFriendProps> = ({token}) => {
+const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
   const [filteredUsers, setFilteredUsers] = useState<any>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
   const deleteSentFriend = async (id: string) => {
-    console.log(id, token, `https://news-1.onrender.com/remove-friend-all/${id}`);
     await axios({
       method: 'put',
-      url: `https://news-1.onrender.com/remove-friend-all/${id}`,
+      url: `${REACT_APP_API_URL}/remove-friend-all/${id}`,
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(function (response) {
-        console.log("response.data",response.data);
+        if(response.status == 200) {
+          const newData = filteredUsers.filter((item) => item._id !== id);
+          setFilteredUsers(newData); 
+        }
       });
   }
-
-
-  const getData = async () => {
-    const config = {
-      headers: {Authorization: `Bearer ${token}`},
-    };
-    if (token) {
-      setIsLoading(true);
-      await axios
-        .get('https://news-1.onrender.com/get-all-sent-add', config)
-        .then(res => {
-            console.log(res.data.listUserRequest);
-          setFilteredUsers(res.data.listUserRequest);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setFilteredUsers([]);
-          console.log(error);
-        });
-    }
-  };
-
-  useEffect(() => {
-    setFilteredUsers([]);
-    getData();
-  }, []);
 
   const renderItem = ({item, index}: any) => (
     <View
@@ -155,33 +129,16 @@ const SentFriend: React.FC<SentFriendProps> = ({token}) => {
 
   return (
     <SafeAreaView style={{flex: 1}}>
-      {isLoading ? (
-        <View
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: -100,
-            bottom: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(100, 100, 100, 0.6)',
-          }}>
-          <ActivityIndicator size="large" />
-          <Text style={{fontSize: 18, marginTop: 12}}>Loading...</Text>
-        </View>
-      ) : (
         <View
           style={{
             paddingBottom: 100,
           }}>
           <FlatList
-            data={filteredUsers}
+            data={listUser}
             renderItem={renderItem}
             keyExtractor={item => item._id.toString()}
           />
         </View>
-      )}
     </SafeAreaView>
   );
 };

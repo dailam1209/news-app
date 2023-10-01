@@ -5,7 +5,7 @@ interface UrlState {
 }
 
 const initialState: UrlState = {
-    url : ''
+    url : '',
 }
 
 const urlSlice = createSlice({

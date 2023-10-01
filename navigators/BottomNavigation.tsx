@@ -59,8 +59,7 @@ const BottomTabNavigation = ({ navigation }) => {
 
   const getToken = async () => {
     let token = await getLocalStorage('token');
-    let username  = await getLocalStorage('username');
-    if(username &&  token) {
+    if(token) {
       setHaveUser(true);
     } else {
       setHaveUser(false);
@@ -69,10 +68,7 @@ const BottomTabNavigation = ({ navigation }) => {
 
   useEffect(() => {
     getToken();
-  }, [isFocused])
-
-  
-
+  }, [])
 
   return (
     <Tab.Navigator
@@ -106,7 +102,7 @@ const BottomTabNavigation = ({ navigation }) => {
         }}
       />
       <Tab.Screen
-        name={haveUser ? "Contacts" : "Login"}
+        name={"Contacts"}
         component={haveUser ? Contacts : Login}
         listeners={{
           tabPress: () => {
@@ -114,7 +110,7 @@ const BottomTabNavigation = ({ navigation }) => {
           },
         }}
         options={{
-          title: haveUser ? "Chats" : "Login",
+          title:  "Chats" ,
           headerShown: false,
           tabBarIcon: ({focused}: any) => {
             return (

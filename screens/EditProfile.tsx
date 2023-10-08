@@ -1,6 +1,5 @@
 import {useRef, useState, useEffect} from 'react';
 import {ActivityIndicator, Alert, ImageBackground} from 'react-native';
-import  {REACT_APP_API_URL}  from '@env'
 import 'react-native-gesture-handler';
 import {
   Pressable,
@@ -14,42 +13,40 @@ import {
 } from 'react-native';
 import {BottomSheetModal, BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
-import UserImage = require('../assets/images/user-plus-image.png');
-import {getLocalStorage} from '../untils/getLocalStorage';
+import { images } from '../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
-import axios from 'axios';
-import RefreshTokenAgain from '../untils/handleRefreshToken';
 import {useIsFocused} from '@react-navigation/native';
 import InputField from '../components/InputFiled';
-import Toast from 'react-native-toast-message';
 import CameraSVG from '../assets/misc/camera-icon.svg';
-import { getImage, getEmail, getId, getPhone, getToken, getUsername, getRefreshToken } from '../helpers/userApi';
+import { useAppDispatch, useAppSelector } from '../untils/useHooks';
+import { emailRegex, phoneRegex } from '../untils/regex';
+import { requestConfig } from '../helpers/newApi';
+import { changeUser } from '../reducer/User/userRedux';
+import { userWithout } from '../helpers/fixDataLocal';
 
 const snapPoints = ['48%'];
 
 export default function EditProfile() {
   
   const isFocused = useIsFocused();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user.user);
   const [username, setUsername] = useState<String>('');
   const [email, setEmail] = useState<String>('');
   const [phone, setPhone] = useState<String>('');
   const [errorPhone, setErrorPhone] = useState<String>('');
   const [errorEmail, setErrorEmail] = useState<String>('');
   const [errorName, setErrorName] = useState<String>('');
-  const [token, setToken] = useState<String>();
-  const [refreshToken, setRefreshToken] = useState<String>();
-  const [idUser, setIdUser] = useState<String>();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const bottomSheetModalRef = useRef(null);
+  const [isLoading, setIsLoading] = useState<Boolean>(false);
+  const [isOpen, setIsOpen] = useState<Boolean>(false);
+  const bottomSheetModalRef = useRef<any>(null);
   const [image, setImage] = useState<any>('');
 
   // change name
-  const changeName = e => {
+  const changeName = (e: string) => {
     setUsername(e);
   };
   const usernameOnblur = () => {
@@ -76,10 +73,7 @@ export default function EditProfile() {
 
   // change phone
   const phoneOnblur = () => {
-    console.log('onBlur', phone);
-    let regexPhone = /\(?([0-9]{3})\)?([ .-]?)([0-9]{3})\2([0-9]{4})/;
-    console.log('regexPhone.test(phone as any)', regexPhone.test(phone as any));
-    if (regexPhone.test(phone as string) === false && phone == '') {
+    if (phoneRegex.test(phone as string) === false && phone == '') {
       setErrorPhone('Please enter again phone number.');
       return false;
     } else {
@@ -90,8 +84,7 @@ export default function EditProfile() {
   };
 
   const emailOnblur = () => {
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-    if (reg.test(email as string) === false) {
+    if (emailRegex.test(email as string) === false) {
       setErrorEmail('Please enter email again.');
       return false;
     } else {
@@ -127,20 +120,10 @@ export default function EditProfile() {
   };
 
   const getAllvalueLocal = async () => {
-    let newImage = await getImage();
-    let newId = await getId();
-    let newToken = await getToken();
-    let newRefreshToken = await getRefreshToken();
-    let newPhone = await getPhone();
-    let newUsername = await getUsername();
-    let newEmail = await getEmail();
-    setImage(newImage);
-    setIdUser(newId as string);
-    setToken(newToken);
-    setRefreshToken(newRefreshToken as string);
-    setPhone(newPhone as string);
-    setUsername(newUsername as string);
-    setEmail(newEmail as string);
+    setImage(user.image);
+    setPhone(user.phone);
+    setUsername(user.username);
+    setEmail(user.email);
   }
 
   // submit profile
@@ -153,51 +136,38 @@ export default function EditProfile() {
     };
 
     const form = new FormData();
-    console.log('phone', phone);
     form.append('avatar', photo as any);
     form.append('username', username as string);
     form.append('phone', phone as any);
     form.append('email', email as string);
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'content-type': 'multipart/form-data',
-      },
-    };
-    try {
-      const response = await axios.put(
-        `${REACT_APP_API_URL}/upload/update/${idUser}`,
-        form,
-        config,
-      );
-      const data = await response.data.user[0];
-      if (response.status == 200) {
-        await AsyncStorage.setItem('username', JSON.stringify(data?.username));
-        await AsyncStorage.setItem('image', JSON.stringify(data?.image));
-        await AsyncStorage.setItem('email', JSON.stringify(data?.email));
-        await AsyncStorage.setItem('phone', JSON.stringify(data?.phone));
-        setIsLoading(false);
-      }
-    } catch (error) {
-      // if (error.message.slice(-3) == 401) {
-      //   console.error('Sai o buoc 1:', error);
-      //   const newConfig = {
-      //     url: urlHost,
-      //     method: 'put',
-      //     baseURL: baseUrlGet,
-      //     data: form,
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //       'content-type': 'multipart/form-data',
-      //     },
-      //   };
-      //   await RefreshTokenAgain(newConfig as any, refreshToken);
-      // } else {
 
-        console.error('Sai o buoc 1:', error);
-      // }
-      setIsLoading(false);
+    let reponse = await requestConfig("PUT", user?.token, `'content-type': 'multipart/form-data'`, `upload/update/${user?._id}`, form, null, true );
+    if(reponse.status == 200 ) {
+      const formatUser = userWithout(reponse.data.user);
+      dispatch( changeUser(formatUser));
+      await AsyncStorage.setItem('user', JSON.stringify(formatUser));
     }
+  //   const config = {
+  //     headers: {
+  //       Authorization: `Bearer ${user.token}`,
+  //       'content-type': 'multipart/form-data',
+  //     },
+  //   };
+  //   try {
+  //     const response = await axios.put(
+  //       `${REACT_APP_API_URL}/upload/update/${user._id}`,
+  //       form,
+  //       config,
+  //     );
+  //     const data = await response.data.user[0];
+  //     if (response.status == 200) {
+  //       await AsyncStorage.setItem('user', JSON.stringify(data));
+  //       setIsLoading(false);
+  //     }
+  //   } catch (error) {
+  //     setIsLoading(false);
+  //     Alert.alert(`${error}`);
+  //   }
   };
 
 
@@ -226,13 +196,11 @@ export default function EditProfile() {
               width: 100,
               height: 100,
               borderColor: 'rgba(0, 0, 0, 0.5)',
-              borderWidth: 2,
               borderRadius: 50,
-              overflow: 'hidden',
               alignItems: 'center',
             }}>
             <ImageBackground
-              source={image ? {uri: `${image}`} : UserImage}
+              source={{uri: image ? image : images.noneUser}}
               resizeMode="cover"
               style={{
                 height: 100,
@@ -242,8 +210,8 @@ export default function EditProfile() {
               <View style={{
                 flexDirection: 'column',
                 justifyContent: 'center',
-                width: 100,
-                height: 100,
+                bottom: 0,
+                right: 0,
                 position: 'absolute',
                 alignItems: 'center',
               }}>
@@ -251,7 +219,9 @@ export default function EditProfile() {
                     color='white'
                     style={{
                       width:  30,
-                      height: 30
+                      height: 30,
+                      backgroundColor: '#3333',
+                      borderRadius: 10,
                     }}
                   />
               </View>
@@ -263,7 +233,7 @@ export default function EditProfile() {
               fontWeight: '600',
               marginTop: 10,
             }}>
-            {username}
+            {user.username}
           </Text>
         </View>
         {/* detail */}
@@ -285,7 +255,7 @@ export default function EditProfile() {
                 height: 40,
               }}>
               <InputField
-                label={username}
+                label={user.username}
                 icon={
                   <Image
                     source={{
@@ -302,7 +272,7 @@ export default function EditProfile() {
                 keyboardType={undefined}
                 inputType={undefined}
                 fieldButtonFunction={() => {}}
-                value={username}
+                value={user.username}
                 error={errorName}
                 onBlur={() => usernameOnblur()}
                 valueChangeFunction={changeName}

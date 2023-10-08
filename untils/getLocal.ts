@@ -1,4 +1,4 @@
-import {getLocalStorage} from '../untils/getLocalStorage';
+import {getLocalStorage} from './getLocalStorage';
 
 export const getToken = async () => {
     const tokenUser = await getLocalStorage('token');

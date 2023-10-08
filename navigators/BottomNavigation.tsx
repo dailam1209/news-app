@@ -11,6 +11,7 @@ import EditProfile from '../screens/EditProfile';
 import Login from '../screens/Login';
 import { getLocalStorage } from '../untils/getLocalStorage';
 import { useIsFocused } from '@react-navigation/native';
+import { useAppSelector } from '../untils/useHooks';
 
 const Tab = createBottomTabNavigator();
 
@@ -54,21 +55,8 @@ const IconTab: React.FC<IconTabProps> = ({focused, url}) => {
 };
 
 const BottomTabNavigation = ({ navigation }) => {
-  const [ haveUser, setHaveUser ] = useState(false);
   const isFocused = useIsFocused();
-
-  const getToken = async () => {
-    let token = await getLocalStorage('token');
-    if(token) {
-      setHaveUser(true);
-    } else {
-      setHaveUser(false);
-    }
-  };
-
-  useEffect(() => {
-    getToken();
-  }, [])
+  const user = useAppSelector(state => state.user?.user);
 
   return (
     <Tab.Navigator
@@ -103,12 +91,7 @@ const BottomTabNavigation = ({ navigation }) => {
       />
       <Tab.Screen
         name={"Contacts"}
-        component={haveUser ? Contacts : Login}
-        listeners={{
-          tabPress: () => {
-            getToken();
-          },
-        }}
+        component={user ? Contacts : Login}
         options={{
           title:  "Chats" ,
           headerShown: false,
@@ -125,12 +108,7 @@ const BottomTabNavigation = ({ navigation }) => {
 
       <Tab.Screen
         name="Chats"
-        component={haveUser ? Chats : Login}
-        listeners={{
-          tabPress: () => {
-            getToken();
-          },
-        }}
+        component={user ? Chats : Login}
         options={{
             headerShown: false,
             headerTitleAlign: "center",

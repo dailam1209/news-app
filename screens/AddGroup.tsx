@@ -12,23 +12,19 @@ import {
   Alert,
 } from 'react-native';
 import { RadioButton } from 'react-native-paper';
-import {COLORS, FONTS} from '../constants';
-import UserImage = require('../assets/images/user-image.png');
+import {COLORS, FONTS, images } from '../constants';
 import SearchSVG from '../assets/misc/search-icon.svg'
 import {useAppSelector} from '../untils/useHooks';
-import { checkHaveRoom } from '../reducer/User/userService';
-import { getId } from '../helpers/userApi';
+import { requestConfig } from '../helpers/newApi';
 
 
 const AddGroup = () => {
   const friends = useAppSelector(state => state.user.list.friend);
-  const [search, setSearch] = useState('');
+  const user = useAppSelector( state => state.user.user);
+  const [search, setSearch] = useState<String>('');
   const [filteredUsers, setFilteredUsers] = useState(friends);
-  const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState<String>();
-  const [isMargin, setIsMargin] = useState(true);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [id, setId] = useState<String>('');
+  const [isMargin, setIsMargin] = useState<Boolean>(true);
+  const [selectedItems, setSelectedItems] = useState([] as any);
   const [ nameGroup, setNameGroup ] = useState<String>();
 
   const isItemSelected = (itemId: string) => {
@@ -38,18 +34,18 @@ const AddGroup = () => {
   const handleSearch = (text: string) => {
     setSearch(text);
   };
-  const getData = () => {
+  const filterData = () => {
     if (!search.trim()) {
       setFilteredUsers(friends);
     } else {
-      const friendsFilter = filteredUsers.filter(user =>
+      const friendsFilter = filteredUsers.filter((user) =>
         user.username.includes(search),
       );
       setFilteredUsers(friendsFilter);
     }
   };
 
-  const changeNameGroup = (value) => {
+  const changeNameGroup = (value: any) => {
     setNameGroup(value)
   }
 
@@ -104,7 +100,7 @@ const AddGroup = () => {
                   marginRight: 22,
                 }}>
                 <Image
-                  source={item.image !== '' ? {uri: `${item.image}`} : UserImage}
+                  source={{ uri : user.image ? user.image : images.noneUser}}
                   resizeMode="contain"
                   style={{
                     height: 50,
@@ -141,8 +137,15 @@ const AddGroup = () => {
   };
 
   const submitCreateGroup = async () => {
+    const data = {
+      receverId: user._id,
+      senderId:user._id,
+      arrayIdAdd: selectedItems,
+      typeRoom: "group",
+      name: nameGroup,
+    }
     if(selectedItems.length > 1 && nameGroup) {
-      await checkHaveRoom(id , id, selectedItems,'group',  nameGroup );
+      await requestConfig("POST", user?.token, null, "/api/create-room", data, null, true)
     } else {
       Alert.alert('Please choose more than 2 user');
     }
@@ -152,15 +155,10 @@ const AddGroup = () => {
     setSelectedItems([]);
   }
 
-  const valueId = async () => {
-    const newId = await getId();
-    setId(newId as string)
-  }
-
   useEffect(() => {
-    valueId();
-    getData();
+    filterData();
   }, [search]);
+
   useEffect(() => {
     Keyboard.addListener('keyboardDidShow', () => {
       setIsMargin(false);
@@ -188,7 +186,7 @@ const AddGroup = () => {
           marginBottom: 6},
           FONTS.body3
         ]}
-        value={nameGroup}
+        value={nameGroup as string}
         onChange={(value) => changeNameGroup(value)}
       />
       <View style={{
@@ -227,7 +225,7 @@ const AddGroup = () => {
             height: '100%',
             marginHorizontal: 12,
           }}
-          value={search}
+          value={search as string}
           onChangeText={handleSearch}
           placeholder="Search for people to add"
         />

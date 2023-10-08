@@ -9,13 +9,9 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import {COLORS, FONTS} from '../constants';
-import UserImage = require('../assets/images/user-image.png');
+import {COLORS, FONTS, images} from '../constants';
 import {formatDate} from '../untils/formatDate';
 import  {REACT_APP_API_URL}  from '@env'
-
-
-
 
 export interface SentFriendProps {
   listUser: any,
@@ -72,7 +68,7 @@ const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
               marginRight: 10,
             }}>
             <Image
-              source={item.image !== undefined ? {uri: `${item.image}`} : UserImage}
+              source={{ uri : item.image !== undefined ? item.image : images.noneUser}}
               resizeMode="contain"
               style={{
                 height: 50,

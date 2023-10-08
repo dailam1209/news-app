@@ -3,28 +3,19 @@ import {createAsyncThunk} from '@reduxjs/toolkit';
 import {getAllChat, getAllUser} from './userService';
 
 
-export const fetchAllFriend = createAsyncThunk('user/getFriend', async () => {
+export const fetchAllFriend = createAsyncThunk('user/getFriend', async (user: any) => {
   try {
-    const data = await getAllUser('friend');
+    const data = await getAllUser('friend', user?.token, user._id);
     return data.data.users;
   } catch (error) {
     Error(error);
   }
 });
 
-// export const fetchAllChats = createAsyncThunk('user/getAllChat', async () => {
-//   try {
-//     const data = await getAllChat('get-chats');
-//     return data.data.lastMessageAll;
-//   } catch (error) {
-//     Error(error);
-//   }
-// });
 
-export const fetchAllChats = createAsyncThunk('user/getAllChat', async () => {
+export const fetchAllChats = createAsyncThunk('user/getAllChat', async (user: any) => {
   try {
-    const data = await getAllChat('get-chats');
-    console.log('data', data);
+    const data = await getAllChat('get-chats', user?.token as string);
     return data.data.lastMessageAll;
   } catch (error) {
     Error(error);
@@ -34,6 +25,7 @@ export const fetchAllChats = createAsyncThunk('user/getAllChat', async () => {
 
 
 interface userState {
+  user: any,
   list: {
     friend: any,
     chat: any,
@@ -42,6 +34,7 @@ interface userState {
 }
 
 const initialState: userState = {
+  user: null,
   list: {
     friend: [],
     chat: [],
@@ -51,10 +44,13 @@ const initialState: userState = {
 
 
 
-const UserSlice = createSlice({
+const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
+    changeUser (state, action) {
+      state.user = action.payload;
+    }
   },
   extraReducers: builder => {
     builder
@@ -72,17 +68,17 @@ const UserSlice = createSlice({
 
       // get chats
       .addCase(fetchAllChats.pending, (state, action) => {
-        // state.isLoading = true;
       })
       .addCase(fetchAllChats.fulfilled, (state, action) => {
         state.list.chat = action.payload;
-        // state.isLoading = false;
       })
       .addCase(fetchAllChats.rejected, (state, action) => {
-        // state.isLoading = false;
       })
   },
 });
 
+export const { changeUser } = userSlice.actions;
 
-export default UserSlice.reducer;
+
+
+export default userSlice.reducer;

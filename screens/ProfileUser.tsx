@@ -1,70 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import {View, SafeAreaView, Text, TouchableOpacity, Image, ImageBackground} from 'react-native';
 import EditSVG from '../assets/misc/edit-icon.svg';
-import UserImage = require('../assets/images/user-image.png');
-import { getLocalStorage } from '../untils/getLocalStorage';
-import { useIsFocused } from '@react-navigation/native';
+import { useAppSelector } from '../untils/useHooks';
+import { images } from '../constants';
 
 function ProfileUser({navigation}: any) {
 
-  
-  const isFocused = useIsFocused();
-  const [ imageUser, setImageUser ] = useState<String>();
-  const [ username, setUsername] = useState<String>();
-  const [ email, setEmail ] = useState<String>();
-  const [ phone, setPhone ] = useState<String>();
-
-  const [isHaveImage, setIsHaveImage ] = useState(false);
-
-
-  // get image in storage
-  const getImage = async () => {
-    const image = await getLocalStorage('image');
-    console.log(image);
-    if (typeof image ==  typeof 'string' && image !== null) {
-      setImageUser(image.replace(/"/g, ''));
-      setIsHaveImage(true);
-    } else {
-      setImageUser(UserImage);
-      setIsHaveImage(false);
-    }
-  };
-
-  // get userName in storage
-  const getUsername  = async () => {
-    const name = await getLocalStorage('username');
-    if (typeof name === typeof 'asdasdf' && name !== null) {
-      setUsername(name.replace(/"/g, ''));
-    } else {
-      setUsername('');
-    }
-  };
-
-  // get email in storage
-  const getEmail  = async () => {
-    const emailUser = await getLocalStorage('email');
-    if (typeof emailUser === typeof 'asdasdf' && emailUser !== null) {
-      setEmail(emailUser.replace(/"/g, ''));
-    } else {
-      setEmail('');
-    }
-  };
-
-  const getPhone  = async () => {
-    const phoneUser = await getLocalStorage('phone');
-    if (typeof phoneUser === typeof 'asdasdf' && phoneUser !== null) {
-      setPhone(phoneUser.replace(/"/g, ''));
-    } else {
-      setPhone('');
-    }
-  };
-
-  useEffect(() => {
-    getImage();
-    getUsername();
-    getEmail();
-    getPhone();
-  }, [isFocused]);
+  const user = useAppSelector(state => state.user.user);
   
   return (
     <SafeAreaView>
@@ -108,7 +50,7 @@ function ProfileUser({navigation}: any) {
             borderRadius: 30,
           }}>
           <Image
-            source={ isHaveImage ? {uri: `${imageUser}`} : UserImage}
+            source={{ uri : user.image ? user.image : images.noneUser}}
             resizeMode="contain"
             style={{
               height: 100,
@@ -124,14 +66,14 @@ function ProfileUser({navigation}: any) {
             marginTop: 8,
             fontWeight: '700',
           }}>
-          {username}
+          {user.username}
         </Text>
         <Text
           style={{
             fontSize: 14,
             marginTop: 2,
           }}>
-          {email}
+          {user.email}
         </Text>
       </View>
       <View
@@ -189,7 +131,7 @@ function ProfileUser({navigation}: any) {
               lineHeight: 30,
               textAlign: 'center',
             }}>
-            {username}
+            {user.username}
           </Text>
         </View>
         <View
@@ -224,7 +166,7 @@ function ProfileUser({navigation}: any) {
               lineHeight: 30,
               textAlign: 'center',
             }}>
-            {email}
+            {user.email}
           </Text>
         </View>
         <View
@@ -259,7 +201,7 @@ function ProfileUser({navigation}: any) {
               lineHeight: 30,
               textAlign: 'center',
             }}>
-            {phone}
+            {user.phone}
           </Text>
         </View>
       </View>

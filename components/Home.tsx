@@ -4,6 +4,7 @@ import Iterm from './Iterm';
 import {useAppDispatch, useAppSelector} from '../untils/useHooks';
 import {changeUrl} from '../reducer/Url/urlRedux';
 import Loading from '../common/Loading';
+import  {REACT_APP_API_URL}  from '@env';
 
 interface listProp {
   listNew: Array<any>;
@@ -12,6 +13,7 @@ function Home({navigation}: any) {
   // handle url and change screen
   const dispatch = useAppDispatch();
   const listNew = useAppSelector(state => state.listNew.listNew);
+  const user = useAppSelector(state => state.user.user) 
 
   const handleGoToDetail = (title: string) => {
     dispatch(changeUrl(title));
@@ -19,12 +21,12 @@ function Home({navigation}: any) {
   };
   const itemsPerRow = 2;
   const numberOfRows = Math.ceil(listNew?.length / itemsPerRow);
-  const isTrue = true;
   const urlAgainToStart = () => {
-    dispatch( changeUrl('http://192.168.0.102:3000'))
+    dispatch( changeUrl(`${REACT_APP_API_URL}`))
   }
 
   useEffect(() => {
+    console.log('user redux' , user);
     urlAgainToStart();
   })
 

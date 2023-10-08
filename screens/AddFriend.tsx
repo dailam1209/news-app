@@ -5,19 +5,18 @@ import {
   Animated,
   StyleSheet,
 } from 'react-native';
-import axios from 'axios';
 import {COLORS } from '../constants';
 import RequestFriend from './RequestFriend';
 import SentFriend from './SentFriend';
-import {getLocalStorage} from '../untils/getLocalStorage';
 import CustomSwitch from '../components/CustomSwitch';
 import Loading from '../common/Loading';
-import  {REACT_APP_API_URL}  from '@env'
-
+import { useAppSelector } from '../untils/useHooks';
+import { requestConfig } from '../helpers/newApi';
 
 const AddFriend = () => {
+  
+  const user = useAppSelector(state => state.user.user)
   const [valueSwitch, setValueSwitch] = useState<Number>(1);
-  const [token, setToken] = useState<String>('');
   const [isLoading, setIsLoading] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<any>([]);
 
@@ -26,73 +25,45 @@ const AddFriend = () => {
     if (valueSwitch !== 1) {
       getDataSentFriend();
     } else {
-      getDataOrtherFriendSent(token as string);
+      getDataOrtherFriendSent();
     }
     setValueSwitch(valueSwitch);
   };
 
-  // get token
-  const getToken = async () => {
-    const tokenUser = await getLocalStorage('token');
-    console.log('asdsadfasfasdfasd');
-    if (typeof tokenUser === typeof 'asdasdf' && tokenUser !== null) {
-      setToken(tokenUser.replace(/"/g, ''));
-      return tokenUser.replace(/"/g, '');
-    } else {
-      setToken('');
-      return 0;
-    }
-  };
-
   // you send friend others
   const getDataSentFriend = async () => {
-    const config = {
-      headers: {Authorization: `Bearer ${token}`},
-    };
-    if (token) {
+    if (user.token) {
       setIsLoading(true);
-      await axios
-        .get(`${REACT_APP_API_URL}/get-all-sent-add', config`)
-        .then(res => {
-          console.log(res.data.listUserRequest);
-          setFilteredUsers(() => res.data.listUserRequest);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setFilteredUsers([]);
-          console.log(error);
-        });
+      let reponse  = await requestConfig("GET", user?.token, null,  "get-all-sent-add", {}, null, true);
+      if(reponse.status == 200) {
+        setFilteredUsers(() => reponse.data.listUserRequest);
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+        setFilteredUsers([]);
+      }
     }
   };
 
   // orther sent for you
-  const getDataOrtherFriendSent = async (token: string) => {
-    const config = {
-      headers: {Authorization: `Bearer ${token}`},
-    };
-    if (token) {
+  async function getDataOrtherFriendSent () {
+    if (user.token) {
       setIsLoading(true);
-      await axios
-        .get(`${REACT_APP_API_URL}/get-all-request-add`, config)
-        .then(res => {
-          setFilteredUsers(res.data.listUserRequest);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          setIsLoading(false);
-          setFilteredUsers([]);
-          console.log(error);
-        });
+      let reponse = await requestConfig("GET", user?.token, null, "get-all-request-add", {}, null, true);
+      if(reponse.status === 200) {
+        setFilteredUsers(reponse.data.listUserRequest);
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+        setFilteredUsers([]);
+      }
     }
   };
 
   useEffect(() => {
-    (async () => {
-      const tokenCurrent = await getToken();
-      getDataOrtherFriendSent(tokenCurrent as string);
-    })();
+      getDataOrtherFriendSent();
   }, []);
+
   return (
     <SafeAreaView style={{flex: 1}}>
       {/* Button */}
@@ -110,10 +81,10 @@ const AddFriend = () => {
       </View>
       {isLoading && <Loading />}
       {valueSwitch == 1 && isLoading == false && (
-        <RequestFriend listUser={filteredUsers} token={token} />
+        <RequestFriend listUser={filteredUsers} token={user?.token} />
       )}
       {valueSwitch !== 1 && isLoading == false && (
-        <SentFriend listUser={filteredUsers} token={token} />
+        <SentFriend listUser={filteredUsers} token={user?.token} />
       )}
     </SafeAreaView>
   );

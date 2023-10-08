@@ -10,7 +10,6 @@ import SplashScreen from 'react-native-splash-screen';
 import { fetchAllNews, fetchEmpty} from './reducer/News/newRedux';
 import axios from 'axios';
 import { getFcmToken } from './untils/notification';
-import { changeUrl } from './reducer/Url/urlRedux';
 import { REACT_APP_API_URL } from '@env';
 
 const App = () => {
@@ -18,24 +17,13 @@ const App = () => {
   // state AppState
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
-  const [ token, setToken ] = useState<String>('');
+  const user = useAppSelector((state) => state.user.user);
 
-  // get token
-  const getToken = async () => {
-    const tokenUser = await getLocalStorage('token');
-    if (typeof tokenUser === typeof 'asdasdf' && tokenUser !== null) {
-        setToken(tokenUser.replace(/"/g, ''));
-        return tokenUser.replace(/"/g, '');
-    } else {
-      setToken('');
-      return '';
-    }
-  };
 
   // post request online or offline
   const postOnline = async (isOnline: boolean) => {
     const config = {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${user.token}` }
   };
     const data = {
       "state": isOnline 
@@ -61,7 +49,7 @@ const App = () => {
   // put fcm-token to update can send notification when have message
   const putFcmToken = async (token: string, fcmToken: any) => {
     const config = {
-      headers: {Authorization: `Bearer ${token}`},
+      headers: {Authorization: `Bearer ${user.token}`},
     };
     await axios
       .put(`${REACT_APP_API_URL}/fcm-token`, {
@@ -84,9 +72,8 @@ const App = () => {
     SplashScreen.hide();
     ( async  () => {
       await getData();
-      const getTokenUser = await getToken();
       const fcmToken = await getFcmToken();
-      await putFcmToken(getTokenUser, fcmToken);
+      await putFcmToken(user.token, fcmToken);
       
       // tongle false when load app again
       dispatch(changeTongle(false));

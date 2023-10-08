@@ -6,27 +6,21 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import axios from 'axios';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getLocalStorage} from '../untils/getLocalStorage';
-import {useIsFocused} from '@react-navigation/native';
-import {getUsername, getToken, getEmail, getImage} from '../helpers/userApi';
-import {COLORS, FONTS} from '../constants';
+import {COLORS, FONTS, images } from '../constants';
 import RightSVG from '../assets/misc/right-icon.svg';
 import LogoutSVG from '../assets/misc/logout-icon.svg';
-import UserImage = require('../assets/images/user-image.png');
 import  {REACT_APP_API_URL}  from '@env'
+import { useAppDispatch, useAppSelector } from '../untils/useHooks';
+import { changeUser } from '../reducer/User/userRedux';
 
 const More = ({navigation}) => {
-  const isFocused = useIsFocused();
+  const dispatch = useAppDispatch();
+  const user  = useAppSelector((state) => state.user?.user);
 
-  const [imageUser, setImageUser] = useState<String>('');
-  const [username, setUsername] = useState<String>('');
-  const [email, setEmail] = useState<String>('');
-  const [token, setToken] = useState<String>('');
 
   // clear all data when logout
   const clearAllData = async () => {
@@ -38,9 +32,7 @@ const More = ({navigation}) => {
     })
       .then(async res => {
         if (res.status == 200) {
-          await AsyncStorage.getAllKeys()
-            .then(keys => AsyncStorage.multiRemove(keys))
-            .then(() => alert('success'));
+          dispatch(changeUser(null))
           navigation.navigate('Home');
           Alert.alert('Logout success.');
         }
@@ -50,20 +42,6 @@ const More = ({navigation}) => {
       });
   };
 
-  const getLocal = async () => {
-    let newImage = await getImage();
-    let newUsername = await getUsername();
-    let newToken = await getToken();
-    let newEmail = await getEmail();
-    setImageUser(newImage ? newImage : '');
-    setUsername(newUsername ? newUsername : '');
-    setToken(newToken);
-    setEmail(newEmail ? newEmail : '');
-  };
-
-  useEffect(() => {
-    getLocal();
-  }, [isFocused]);
   return (
     <SafeAreaView style={{flex: 1}}>
       <PageContainer>
@@ -99,7 +77,7 @@ const More = ({navigation}) => {
                 height: '100%',
                 borderRadius: 50,
               }}
-              source={imageUser ? {uri: `${imageUser}`} : UserImage}
+              source={{ uri : user?.image ? user?.image : images.noneUser}}
             />
           </View>
           <View
@@ -109,8 +87,8 @@ const More = ({navigation}) => {
               height: 80,
               justifyContent: 'center',
             }}>
-            <Text style={{...FONTS.h4, marginVertical: 6}}>{username}</Text>
-            <Text style={{...FONTS.body3, color: COLORS.gray}}>{email}</Text>
+            <Text style={{...FONTS.h4, marginVertical: 6}}>{user?.username}</Text>
+            <Text style={{...FONTS.body3, color: COLORS.gray}}>{user?.email}</Text>
           </View>
           <TouchableOpacity
             onPress={() => {
@@ -124,7 +102,7 @@ const More = ({navigation}) => {
           }}>
           <TouchableOpacity
             onPress={() => {
-              if (token && username) {
+              if (user?.token) {
                 navigation.navigate('ProfileUser');
               } else {
                 navigation.navigate('Login');
@@ -139,7 +117,7 @@ const More = ({navigation}) => {
 
           <TouchableOpacity
             onPress={() => {
-              if (token && username) {
+              if (user?.token) {
                 navigation.navigate('Chats');
               } else {
                 navigation.navigate('Login');
@@ -158,17 +136,6 @@ const More = ({navigation}) => {
             }}
             style={styles.touch}>
             <View style={styles.touchTitle}>
-              <Text style={{...FONTS.h4, marginLeft: 12}}>Notifications</Text>
-              <RightSVG width={20} height={20} />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              console.log('Pressed');
-            }}
-            style={styles.touch}>
-            <View style={styles.touchTitle}>
               <Text style={{...FONTS.h4, marginLeft: 12}}>Help</Text>
               <RightSVG width={20} height={20} />
             </View>
@@ -176,7 +143,7 @@ const More = ({navigation}) => {
 
           <TouchableOpacity
             onPress={() => {
-              if (token && username && email) {
+              if (user?.token) {
                 clearAllData();
               }
             }}

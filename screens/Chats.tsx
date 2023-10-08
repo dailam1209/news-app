@@ -13,57 +13,44 @@ import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
 import {FONTS, COLORS} from '../constants';
-import {contacts} from '../constants/data';
-import {getLocalStorage} from '../untils/getLocalStorage';
-import UserImage = require('../assets/images/user-image.png');
+import { images }from '../constants';
 import AcceptSVG from '../assets/misc/accepct-icon.svg';
 import { formatTime} from '../untils/formatDate';
-import {socket} from '../config/config';
 import {useAppDispatch, useAppSelector} from '../untils/useHooks';
 import { fetchAllChats, fetchAllFriend } from '../reducer/User/userRedux';
 import { useSelector } from 'react-redux';
-import { checkHaveRoom, createMessageApi } from '../reducer/User/userService';
-import { getImage, getToken, getUsername } from '../helpers/userApi';
-import Iterm from '../components/Iterm';
-import  {REACT_APP_API_URL}  from '@env'
+import { checkHaveRoom} from '../reducer/User/userService';
+import  {REACT_APP_API_URL}  from '@env';
+import { isExpiresIn } from '../helpers/isExpried';
 
 
 const Chats: React.FC<{navigation: any}> = ({navigation}) => {
 
   const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.user.user)
   const friends = useSelector((state: any) => state.user.list.friend);
   const chats = useAppSelector((state: any) => state.user.list.chat);
   const isLoading = useAppSelector((state) => state.user.isLoading);
-  console.log('chats', chats);
+  const numberMessage = 0;
 
   const [search, setSearch] = useState('');
+  const [filteredUser, setFilteredUsers] = useState(chats)
   const isFocused = useIsFocused();
-  const [username, setUsername] = useState<String>('');
-  const [idUser, setIdUser] = useState<String>();
-  const [ token, setToken ] = useState<String>();
 
-  const id = async () => {
-    const getId = await getLocalStorage('_id');
-    if (typeof getId === typeof 'asdasdf' && getId !== null) {
-      setIdUser(getId.replace(/"/g, ''));
-      return getId.replace(/"/g, '');
-    } else {
-      setIdUser('');
-      return 0;
-    }
-  };
 
   const handleSearch = (text: string) => {
     setSearch(text);
-    const filteredData = chats.filter(user =>
-      user.userName.toLowerCase().includes(text.toLowerCase()),
-    );
-    // setFilteredUsers(filteredData as any);
+    if(text) {
+      const filteredData = chats.filter(user =>
+        user.username.toLowerCase().includes(text.toLowerCase()),
+      );
+      setFilteredUsers(filteredData);
+    } else {
+      setFilteredUsers(chats);
+    }
   };
 
-  const getImageUser = async () => {
-      const image = await getImage();
-  };
+ 
 
   const onRoom = async (idRoom: string) => {
     axios
@@ -71,7 +58,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
         `${REACT_APP_API_URL}/on-room/${idRoom}`,
         {},
         {
-          headers: {Authorization: `Bearer ${token}`},
+          headers: {Authorization: `Bearer ${user?.token}`},
         },
       )
       .then(response => {
@@ -85,11 +72,12 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
   };
 
   const checkhaveRoomInDatabase = async (received, idOfUser, item) => {
-    const idOfRoom = await checkHaveRoom(received, idOfUser, [], '');
+    console.log(received, idOfUser, item);
+    const idOfRoom = await checkHaveRoom(received, idOfUser, [], '', '', user.token);
     if(idOfRoom) {
       navigation.navigate('PersonalChat', {
         userName: item.username,
-        idReciever:item.id,
+        reciever:item.id,
         roomId: idOfRoom,
         imageRecever: item.image,
         fcmReciever: item.fcmToken,
@@ -98,15 +86,11 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
     }
   }
 
-  const fetchData = async () => {
-    const name = await getUsername();
-    const newToken = await getToken();
-    setToken(newToken);
-    setUsername(name as string)
+  async function fetchData () {
     try {
       await Promise.all([
-        dispatch(fetchAllChats()),
-        dispatch(fetchAllFriend()),
+        dispatch(fetchAllChats(user)),
+        dispatch(fetchAllFriend(user)),
       ]);
     } catch (error) {
       console.error('Error dispatching actions:', error);
@@ -115,13 +99,6 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
 
   useEffect(() => {
     fetchData();
-    if (isFocused) {
-      (async () => {
-        const idOfUser = await id();
-        socket.connect();
-        socket.emit('connected', idOfUser);
-      })();
-    }
   }, [isFocused]);
 
   const renderItem = ({item, index}: any) => (
@@ -129,15 +106,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
       key={index}
       onPress={async () => {
         await onRoom(item.roomId);
-        navigation.navigate('PersonalChat', {
-          userName: item.username,
-          // idReciever: item.reciever !== idUser ? item.reciever : item.sender,
-          idReciever: item.reciever ,
-          imageRecever: item.image,
-          roomId: item.roomId,
-          fcmReciever: item.fcmToken,
-          isOnline: item.isOnline,
-        });
+        navigation.navigate('PersonalChat', item);
       }}
       style={[
         {
@@ -187,7 +156,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
             )}
 
             <Image
-              source={item.image ? {uri: item.image} : UserImage}
+              source={{ uri : user.image ? user.image : images.noneUser}}
               resizeMode="contain"
               style={{
                 height: 50,
@@ -202,16 +171,22 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
               justifyContent: 'center',
             }}>
             <Text style={{...FONTS.h4, marginBottom: 4}}>
-            { item.type == 'group' && item.nameRoom}
-              {item.type == 'one' && item.username}
+            { item.typeRoom == 'group' && item.nameRoom}
+              {item.typeRoom == 'one' && item.username}
               </Text>
             <View
               style={{
                 flexDirection: 'row',
               }}>
-              <Text>
+              <Text style={[{
+                fontSize: 14,
+              },
+                numberMessage > 0 ? {
+                  color: COLORS.black } : {color: COLORS.secondaryGray}
+              ]}>
                 { item.type == 'group' && item.nameRoom}
-                {item.type == 'one' && username.trim() == item.username.trim() ? 'Bạn:' : `${item.username}:`}{' '}
+                
+                { user.username.localeCompare(item.sender.username) === 0 && item.sender.id === user._id ?  'Bạn:'  :`${item.sender.username}:`  }{' '}
                 {item.text}
               </Text>
               <View
@@ -231,7 +206,20 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
           </View>
         </View>
         <View>
-          <AcceptSVG width={10} height={60} />
+          {item.count < 0 && <AcceptSVG width={10} height={60} />}
+          
+
+          { item.count > 0 && <Text style={{
+            width: 'auto',
+            height: 'auto',
+            padding: 2,
+            textAlign: 'center', 
+            alignItems: 'center', 
+            fontSize: 14,
+            borderRadius: 10,
+            backgroundColor: COLORS.green,
+            color: COLORS.secondaryWhite,
+          }}>{' '}{item.count > 5 ? '+5' : item.count} </Text>}
         </View>
       </View>
     </TouchableOpacity>
@@ -258,8 +246,9 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                   borderRadius: 8,
                   padding: 4,
                 }}
-                onPress={() => {
-                  navigation.navigate('AddGroup');
+                onPress={async () => {
+                 await isExpiresIn();
+                  // navigation.navigate('AddGroup');
                 }}>
                 <Text
                   style={{
@@ -324,14 +313,14 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                       }}>
                       <TouchableOpacity
                         onPress={ () => 
-                          checkhaveRoomInDatabase(item.id, idUser, item)
+                          checkhaveRoomInDatabase(item.id, user._id, item)
                         }
                         style={{
                           paddingVertical: 15,
                           marginRight: 22,
                         }}>
                         <Image
-                          source={item.image ? {uri: item.image} : UserImage}
+                          source={{ uri : user.image ? user.image : images.noneUser}}
                           resizeMode="cover"
                           style={{
                             height: 50,
@@ -366,7 +355,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 }}
                 value={search}
                 onChangeText={handleSearch}
-                placeholder="Search friends..."
+                placeholder="Search friend in chats..."
               />
             </View>
 
@@ -376,7 +365,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 paddingBottom: 100,
               }}>
               <FlatList
-                data={chats}
+                data={filteredUser}
                 renderItem={renderItem}
                 keyExtractor={item => item.roomId?.toString()}
               />

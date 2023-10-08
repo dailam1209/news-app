@@ -2,8 +2,6 @@ import React, {useState} from 'react';
 import  {REACT_APP_API_URL}  from '@env'
 import {Text, SafeAreaView, View, TouchableOpacity, ToastAndroid} from 'react-native';
 import InputField from '../components/InputFiled';
-import {MaterialIcons} from '@expo/vector-icons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import EmailSVG from '../assets/misc/envelope-line-icon.svg';
 import LoginSVG from '../assets/misc/login.svg';
@@ -12,7 +10,6 @@ import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
 import UserSVG from '../assets/misc/4092564_profile_about_mobile ui_user_icon.svg';
 import axios from 'axios';
-import { err } from 'react-native-svg/lib/typescript/xml';
 
 interface RegisterProps {
   navigation: any;

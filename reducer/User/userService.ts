@@ -1,23 +1,13 @@
 import axios from 'axios';
-import {getLocalStorage} from '../../untils/getLocalStorage';
-import {
-  getToken,
-  getId,
-  getImage,
-  getRefreshToken,
-  getUsername,
-} from '../../helpers/userApi';
 import  {REACT_APP_API_URL}  from '@env';
 
 const config = (token: string) => {
   return {headers: {Authorization: `Bearer ${token}`}};
 };
 
-export const getAllUser = async (url: string): Promise<any> => {
-  const token = await getToken();
-  const id = await getId();
+export const getAllUser = async (url: string, token: string, _id: string): Promise<any> => {
   return await axios
-    .get(`${REACT_APP_API_URL}/${url}/${id}`, config(token))
+    .get(`${REACT_APP_API_URL}/${url}/${_id}`, config(token))
     .then(response => {
       return {
         status: response.status,
@@ -33,8 +23,7 @@ export const getAllUser = async (url: string): Promise<any> => {
     });
 };
 
-export const getAllChat = async (url: string): Promise<any> => {
-  const token = await getToken();
+export const getAllChat = async (url: string, token: string): Promise<any> => {
   return await axios
     .get(`${REACT_APP_API_URL}/${url}`, config(token))
     .then(response => {
@@ -52,16 +41,16 @@ export const getAllChat = async (url: string): Promise<any> => {
 };
 
 export const checkHaveRoom = async (
-  receverId,
-  senderId,
-  arrayIdAdd,
-  typeRoom,
-  name,
+  receverId: string,
+  senderId: string,
+  arrayIdAdd: any,
+  typeRoom: string,
+  name: string,
+  token: string
 ) => {
   try {
-    const token = await getToken();
     const response = await axios.post(
-      '${REACT_APP_API_URL}/api/create-room',
+      `${REACT_APP_API_URL}/api/create-room`,
       {
         receverId: receverId,
         senderId: senderId,
@@ -95,14 +84,14 @@ export const createMessageApi = async (
   senderId: string,
   idRoom: string,
   type: string,
+  token: string
 ) => {
 
-  const user =   {
+  const userMessage =   {
     _id: senderId,
     name: '',
     avatar: '',
   }
-  const token = await getToken();
   await axios
     .post(
       `${REACT_APP_API_URL}/api/create-message/${receverId}`,
@@ -116,7 +105,7 @@ export const createMessageApi = async (
             text: type == 'group' ? 'Well come to group chat' : '',
             createdAt: Date.now(),
             user:  
-              type == 'group' ? '' : user
+              type == 'group' ? '' : userMessage
             ,
             image: '',
             sent: true,
@@ -142,25 +131,22 @@ export const createMessageApi = async (
     });
 };
 
-export const getAllMessageOfRoom = async (roomId: string): Promise<any> => {
-  const token = await getToken();
-  return await axios
-    .get(`${REACT_APP_API_URL}/api/get-all-message/${roomId}`, config(token))
-    .then(async response => {
-      if (response.status == 200) {
-        const json = response.data.listMessage[0];
-        return json;
-      }
-    })
-    .catch(error => {
-      console.log(error);
-    });
-};
+// export const getAllMessageOfRoom = async (roomId: string, user: any): Promise<any> => {
+//   return await axios
+//     .post(`${REACT_APP_API_URL}/api/get-all-message/${roomId}`, data: { user.fcmToken }, config(user.token))
+//     .then(async response => {
+//       if (response.status == 200) {
+//         const json = response.data.listMessage[0];
+//         return json;
+//       }
+//     })
+//     .catch(error => {
+//       console.log(error);
+//     });
+// };
 
   // post message in database if not image -> image = ''
-  export  const submitMessage = async (data: any) => {
-
-    const token = await getToken();
+  export  const submitMessage = async (data: any, token: string) => {
     await axios
       .post(
         `${REACT_APP_API_URL}/api/create-message/${data.reciever}`,

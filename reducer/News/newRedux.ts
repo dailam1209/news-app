@@ -1,15 +1,11 @@
 import {createSlice} from '@reduxjs/toolkit';
 import {createAsyncThunk} from '@reduxjs/toolkit';
-import {err} from 'react-native-svg/lib/typescript/xml';
-import {allNew} from './newService';
-
-interface ListNewState {
-  listNew: object;
-}
+import { requestConfig } from '../../helpers/newApi';
 
 export const fetchAllNews = createAsyncThunk('api/News', async () => {
   try {
-    return await allNew('news').then(res => res.data.listNew);
+    const reponse = await requestConfig('GET', '', null, 'api/news', {}, null, false)
+    return reponse.data.listNew;
   } catch (error) {
     Error(error);
   }
@@ -56,6 +52,5 @@ const listNewSlice = createSlice({
   },
 });
 
-// export const { changeNew } = listNewSlice.actions;
 
 export default listNewSlice.reducer;

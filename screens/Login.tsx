@@ -1,21 +1,25 @@
 import React, {useState} from 'react';
-import {Text, SafeAreaView, View, TouchableOpacity, ActivityIndicator, Alert} from 'react-native';
+import {
+  Text,
+  SafeAreaView,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import InputField from '../components/InputFiled';
-import {MaterialIcons} from '@expo/vector-icons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import Google from '../assets/misc/Google.svg';
-import Facebook from '../assets/misc/facebook.svg';
 import EmailSVG from '../assets/misc/envelope-line-icon.svg';
 import LoginSVG from '../assets/misc/login.svg';
 import Lock from '../assets/misc/lock-line-icon.svg';
 import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppDispatch } from '../untils/useHooks';
-import { emailRegex, passwordRegex } from '../untils/regex';
-import  {REACT_APP_API_URL}  from '@env'
+import {useAppDispatch} from '../untils/useHooks';
+import {emailRegex, passwordRegex} from '../untils/regex';
+import {changeUser} from '../reducer/User/userRedux';
+import {requestConfig} from '../helpers/newApi';
+import {userWithout} from '../helpers/fixDataLocal';
 
 interface LoginProps {
   navigation: any;
@@ -23,10 +27,10 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({navigation}) => {
   const [changeEye, setChangeEye] = useState(true);
-  const [ isLoading, setIsLoading ] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [ errorEmail, setErrorEmail ] = useState<String>('');
-  const [ errorPassword, setErrorPassword ] = useState<String>('');
+  const [errorEmail, setErrorEmail] = useState<String>('');
+  const [errorPassword, setErrorPassword] = useState<String>('');
 
   const [email, setEmail] = useState<String>('');
   const [password, setPassword] = useState<String>('');
@@ -43,69 +47,65 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
 
   const emailOnblur = () => {
     if (emailRegex.test(email as string) === false) {
-      setErrorEmail('Please enter email again.')
+      setErrorEmail('Please enter email again.');
       return false;
-    }
-    else {
+    } else {
       setEmail('');
-      setErrorEmail('')
+      setErrorEmail('');
       emailChange(email as string);
       return true;
     }
   };
 
   const passwordOnblur = () => {
-    if(!password || password.length < 8 || passwordRegex.test(password as string) === false) {
+    if (
+      !password ||
+      password.length < 8 ||
+      passwordRegex.test(password as string) === false
+    ) {
       setErrorPassword('Please enter password same: Lamdai1209@');
       return false;
     } else {
       setErrorPassword('');
-      setErrorPassword('')
+      setErrorPassword('');
       passChange(password as string);
       return true;
     }
-  }
-
+  };
 
   // submitLogin
   const submitHandle = async () => {
-
     const isEmail = emailOnblur();
     const isPassword = passwordOnblur();
     try {
-      if(isEmail && isPassword) {
+      if (isEmail && isPassword) {
         setIsLoading(true);
-        await axios({
-          method: 'post',
-          url: `${REACT_APP_API_URL}/login`,
-          headers: {
-          },
-          data: {
+        const reponse = await requestConfig(
+          'post',
+          '',
+          null,
+          'login',
+          {
             email: email,
-            password: password
+            password: password,
           },
-        }).then((res) => {
-  
-          if(res.status == 200) {
-            setIsLoading(false);
-            AsyncStorage.setItem("username", JSON.stringify(res.data.user.username));
-            AsyncStorage.setItem("_id", JSON.stringify(res.data.user._id));
-            AsyncStorage.setItem("refresh-token", JSON.stringify(res.data.user.refreshToken));
-            AsyncStorage.setItem("token", JSON.stringify(res.data.token));
-            AsyncStorage.setItem("image", JSON.stringify(res.data.user.image));
-            AsyncStorage.setItem("email", JSON.stringify(res.data.user.email));
-            AsyncStorage.setItem("phone", JSON.stringify(res.data.user.phone));
-            AsyncStorage.setItem("create-at", JSON.stringify(res.data.user.expiresIn));
-            navigation.navigate('Home'); 
-          }
-        })
-      } 
+          null,
+        false);
+        if (reponse.status == 200) {
+          setIsLoading(false);
+          let user = reponse.data.user;
+          user.token = reponse.data.token;
+          const formatUser = await userWithout(user);
+          // AsyncStorage.setItem('user', JSON.stringify(formatUser));
+          dispatch(changeUser(formatUser));
+          navigation.navigate('Home');
+        }
+      }
     } catch (error) {
       setIsLoading(false);
-      Alert.alert(`${error.message}`)
+      Alert.alert(`${error.message}`);
     }
-
-  }
+  };
 
   const tongleChangeEye = () => {
     setChangeEye(!changeEye);
@@ -167,6 +167,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             error={errorEmail}
             onBlur={() => emailOnblur()}
             valueChangeFunction={emailChange}
+            isBorderRadius={undefined}
           />
           <InputField
             label={'Password'}
@@ -208,10 +209,11 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             error={errorPassword}
             onBlur={passwordOnblur}
             valueChangeFunction={passChange}
+            isBorderRadius={undefined}
           />
 
           <TouchableOpacity
-            onPress={() =>navigation.navigate('ForgotPassword')}
+            onPress={() => navigation.navigate('ForgotPassword')}
             style={{
               display: 'flex',
               marginLeft: 'auto',
@@ -249,19 +251,27 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
               borderRadius: 20,
             }}>
             <TouchableOpacity onPress={() => submitHandle()}>
-              {!isLoading && <Text
-                style={{
-                  textAlign: 'center',
-                  fontWeight: '600',
-                  fontSize: 20,
-                  padding: 6,
-                  color: 'white',
-                }}>
-                Login
-              </Text> }
-              {isLoading && <ActivityIndicator style={{
-                padding: 2
-              }} size="large" color="white" />}
+              {!isLoading && (
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    fontWeight: '600',
+                    fontSize: 20,
+                    padding: 6,
+                    color: 'white',
+                  }}>
+                  Login
+                </Text>
+              )}
+              {isLoading && (
+                <ActivityIndicator
+                  style={{
+                    padding: 2,
+                  }}
+                  size="large"
+                  color="white"
+                />
+              )}
             </TouchableOpacity>
           </LinearGradient>
         </View>

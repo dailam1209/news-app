@@ -12,7 +12,7 @@ function Loading() {
         bottom: 0,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(100, 100, 100, 0.6)',
+        backgroundColor: 'transparent',
       }}>
       <ActivityIndicator size="large" />
       <Text

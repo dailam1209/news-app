@@ -46,25 +46,21 @@ function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={customTheme}>
+    <NavigationContainer theme={customTheme} >
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
             backgroundColor: 'yellow',
           },
+          headerRight: () => (
+            <IconShare />
+      ),
         }}
         initialRouteName="BottomTabNavigation">
         <Stack.Screen
           name="Home"
           options={{
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           }}
           component={Home}
         />
@@ -72,16 +68,8 @@ function AppNavigator() {
           name="BottomTabNavigation"
           component={BottomTabNavigation}
           options={({route}: any) => ({
-            // headerShown: false,
             headerLargeTitle: true,
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           })}
         />
         <Stack.Screen
@@ -89,14 +77,8 @@ function AppNavigator() {
           component={Register}
           options={({route}: any) => ({
             headerLargeTitle: true,
+            
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           })}
         />
         <Stack.Screen
@@ -105,13 +87,6 @@ function AppNavigator() {
           options={({route}: any) => ({
             headerLargeTitle: true,
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           })}
         />
         <Stack.Screen
@@ -119,88 +94,41 @@ function AppNavigator() {
           component={ChangePass}
           options={({route}: any) => ({
             headerLargeTitle: true,
+            headerShown: false,
             title: 'VietNam News Online',
             headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
                   <IconShare />
-                </TouchableOpacity>
-              </View>
             ),
           })}
         />
         <Stack.Screen
           name="ProfileUser"
           component={ProfileUser}
-          options={{
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
-          }}
         />
         <Stack.Screen
           name="EditProfile"
           component={EditProfile}
-          options={{
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
-          }}
         />
         <Stack.Screen
           name="AddGroup"
           component={AddGroup}
-          options={{
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
-          }}
         />
         <Stack.Screen
           name="PersonalChat"
-          component={PersonalChat}
-          options={{
+          options={({route}: any) => ({
             headerShown: false,
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
-          }}
+          })}
+          component={PersonalChat}
         />
         <Stack.Screen
           name="AddFriend"
           component={AddFriend}
-          options={{
-            headerTitleAlign: "center",
-          }}
         />
 
         <Stack.Screen
           name="Detail"
           options={{
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           }}
           component={Detail}
         />
@@ -208,13 +136,6 @@ function AppNavigator() {
           name="Login"
           options={{
             title: 'VietNam News Online',
-            headerRight: () => (
-              <View>
-                <TouchableOpacity onPress={() => handleShareIcon()}>
-                  <IconShare />
-                </TouchableOpacity>
-              </View>
-            ),
           }}
           component={Login}
         />

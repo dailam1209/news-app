@@ -11,6 +11,7 @@ import {
   Alert
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
+import axios from 'axios';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
 import {COLORS, FONTS} from '../constants';
@@ -18,21 +19,22 @@ import {AntDesign, Ionicons} from '@expo/vector-icons';
 import UserImage = require('../assets/images/user-image.png');
 import UserCount = require('../assets/images/count-user-image.png');
 import {useDebounce} from '../untils/useDebounce';
-import axios from 'axios';
-import {getLocalStorage} from '../untils/getLocalStorage';
-import  {REACT_APP_API_URL}  from '@env'
+import  {REACT_APP_API_URL}  from '@env';
+import { useAppSelector } from '../untils/useHooks';
 
 const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
+
+  
   const [search, setSearch] = useState('');
-  const [token, setToken] = useState<String>();
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [ isMargin , setIsMargin ] = useState(true);
+  const user = useAppSelector(state => state.user.user)
 
   const debounce = useDebounce(search.toLocaleLowerCase(), 500);
 
   const handleSearch = (text: string) => {
-    setSearch(text);
+      setSearch(text);
   };
 
   const generateRandomString = (length: number) => {
@@ -138,18 +140,11 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
     </View>
   );
 
-  const getToken = async () => {
-    const tokenUser = await getLocalStorage('token');
-    if (typeof tokenUser === typeof 'asdasdf' && tokenUser !== null) {
-      setToken(tokenUser.replace(/"/g, ''));
-    } else {
-      setToken('');
-    }
-  };
+
 
   const addFriendRequest = async (idAdd: string) => {
     const config = {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${user?.token}` }
   };
     const data = {}
     try {
@@ -163,15 +158,14 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
     
   }
 
-  
-
   const getData = async () => {
     if (!debounce.trim()) {
       setFilteredUsers([]);
+      setIsLoading(false)
       return;
     }
     const config = {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${user.token}` }
   };
     setIsLoading(true);
     const listUser = await axios.get(
@@ -188,7 +182,6 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
 
   useEffect(() => {
     setFilteredUsers([]);
-    getToken();
     getData();
   }, [debounce]);
 

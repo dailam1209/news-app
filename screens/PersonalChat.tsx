@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import React, {useEffect, useState, useCallback, useRef} from 'react';
-import  {REACT_APP_API_URL}  from '@env'
+import {REACT_APP_API_URL} from '@env';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {COLORS, FONTS} from '../constants';
 import {StatusBar} from 'expo-status-bar';
@@ -24,13 +24,15 @@ import {
 import {socket} from '../config/config';
 import axios from 'axios';
 import {launchImageLibrary} from 'react-native-image-picker';
-import {getImage, getId, getToken, getUsername} from '../helpers/userApi';
 // icon
 import LeftSVG from '../assets/misc/left-icon.svg';
 import SendSVG from '../assets/misc/send-icon.svg';
 import MenuSVG from '../assets/misc/menu-icon.svg';
 import ImageSVG from '../assets/misc/image-icon.svg';
-import { getAllMessageOfRoom, submitMessage } from '../reducer/User/userService';
+import {getAllMessageOfRoom, submitMessage} from '../reducer/User/userService';
+import {useAppSelector} from '../untils/useHooks';
+import {requestConfig} from '../helpers/newApi';
+import { sendNotification } from '../helpers/sendNotification';
 
 interface PerrsonProps {
   navigation: () => void;
@@ -38,15 +40,13 @@ interface PerrsonProps {
 }
 
 const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
-  const {userName, idReciever, imageRecever, roomId, fcmReciever, isOnline} =
+  const {userName, reciever, imageRecever, roomId, fcmReciever, isOnline} =
     route.params;
+  const user = useAppSelector((state) => state.user.user);
   const [messages, setMessages] = useState([] as any);
-  const [idUser, setIdUser] = useState<String>();
-  const [token, setToken] = useState<String>();
-  const [username, setUsername] = useState<String>('');
-  const [image, setImage] = useState<any>('');
-  const [listUserInRoom, setListUserInRoom] = useState([] as any);
-
+  const arrayListUser = []
+  const [listOffline, setListOffline ] = useState([] as any)
+ 
   const [replyMsg, setReplyMsg] = React.useState({
     replyId: null,
     text: '',
@@ -54,34 +54,46 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   });
 
   // api
-  const setValue = async () => {
-    let newImage = await getImage();
-    let newUsername = await getUsername();
-    let newToken = await getToken();
-    let newId = await getId();
-    setImage(newImage);
-    setIdUser(newId as string);
-    setToken(newToken);
-    setUsername(newUsername as string);
-  };
 
   const getAllChat = async () => {
-    let lastMessageConvert = [];
-    const messages = await getAllMessageOfRoom(roomId);
-    messages?.messages?.map((message: any) => {
-        if(message.text !== '') {
-          lastMessageConvert.push(message);
-        }
-    });
-    setMessages(lastMessageConvert.reverse());
+    try {
+      const promises = [
+        requestConfig("POST", user.token, null, `api/get-all-message/${roomId}`, { fcmToken: user.fcmToken }, null, true),
+        requestConfig("POST", user.token, null, `api/check-message/${roomId}`, {}, null, true),
+      ];
+      // Use Promise.all to wait for all promises to resolve
+      const [listUserOffline, messagesRoom] = await Promise.all(promises);
+  
+      setListOffline(listUserOffline.data)
+  
+      if (Array.isArray(messagesRoom?.data?.messages)) {
+        console.log("messagesRoom.data.messages[0]", messagesRoom.data.messages[0]);
+        const lastMessageConvert = messagesRoom.data.messages
+          .filter((message) => message.text !== '')
+          .reverse();
+  
+        setMessages(lastMessageConvert);
+      } else {
+        console.error('No messages found or invalid data structure.');
+      }
+    } catch (error) {
+      console.error('Error in getAllChat:', error);
+    }
   };
 
   const submitMessageData = async (data: any) => {
-    await submitMessage(data)
+    await requestConfig(
+      'POST',
+      user?.token,
+      null,
+      `api/create-message/${reciever}`,
+      data,
+      null,
+      true,
+    );
   };
 
   // end api
-
 
   // handle get return url in icloud to update in database and show it
   const getUrlWhenChooseImage = async (url: string) => {
@@ -99,7 +111,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
       // config header
       const config = {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${user.token}`,
           'Content-type': 'multipart/form-data',
         },
       };
@@ -116,8 +128,6 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
       Alert.alert(`${error.message}`);
     }
   };
-
-  
 
   // handle picture
   const handlePhotoPicker = async () => {
@@ -139,24 +149,24 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
             text: '',
             createdAt: new Date(),
             user: {
-              _id: idUser,
-              name: username,
-              avatar: image,
+              _id: user._id,
+              name: user.username,
+              avatar: user.image,
             },
             image: urlImage ? urlImage.image : '',
           },
         ];
         (imageMsg.user = {
-          _id: idUser,
-          name: username,
-          avatar: image,
+          _id: user._id,
+          name: user.username,
+          avatar: user.image,
         }),
           setMessages(previousMessages =>
             GiftedChat.append(previousMessages, imageMsg as any),
           );
 
         socket.emit('send_message', {
-          receverId: idReciever,
+          receverId: reciever,
           roomId: roomId,
           messages: imageMsg,
         });
@@ -204,7 +214,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           });
         }
       },
-      [idReciever],
+      [reciever],
     );
 
     return (
@@ -223,7 +233,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         }
         leftActivationValue={90}
         leftActionValue={0}
-        swipeKey={idReciever + ''}>
+        swipeKey={reciever + ''}>
         <></>
         <Bubble
           {...props}
@@ -458,89 +468,73 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
     if (props.currentMessage.isReply) {
       return <CustomMessageText {...props} />;
     }
-    return (
-      <MessageText
-        {...props}
-      />
-    );
+    return <MessageText {...props} />;
   };
 
   // send message with socket and save in database
   const onSendMessage = async (messages = []) => {
-    if (idReciever) {
-      if (listUserInRoom.includes(idReciever) !== 1) {
-        const {_id, createAt, text, user} = messages[0];
-        const newMessage = [
+    const {_id, createAt, text, user} = messages[0];
+    console.log(user);
+    const newMessage = [
+      {
+        _id: _id,
+        text: text,
+        createdAt: createAt,
+        user: user,
+        sent: true,
+        received: reciever,
+        seen: false,
+      },
+    ];
+    if (text.trim() !== '') {
+      socket.emit('send_message', {
+        receverId: reciever,
+        roomId: roomId,
+        messages: newMessage,
+      });
+      setMessages((previousMessages: any) =>
+        GiftedChat.append(previousMessages, messages),
+      );
+      setReplyMsg({
+        replyId: null,
+        text: '',
+        user: null,
+      });
+      const message = {
+        sender: user._id,
+        reciever: reciever,
+        roomId: roomId,
+        messages: [
           {
-            _id: _id,
-            text: text,
-            createdAt: createAt,
-            user: user,
+            text: newMessage[0].text,
+            createdAt: Date.now(),
+            user: {
+              _id: user._id,
+              name: user.name,
+              avatar: user.avatar,
+            },
+            image: '',
             sent: true,
-            received: idReciever,
-            seen: true,
+            received: true,
+            seen: false,
+            deleteAt: '',
+            hiddenTo: [],
+            isReply: {},
           },
-        ];
-        if(text.trim() !== '') {
-          socket.emit('send_message', {
-            receverId: idReciever,
-            roomId: roomId,
-            messages: newMessage,
-          });
-          setMessages((previousMessages: any) =>
-            GiftedChat.append(previousMessages, messages),
-          );
-          setReplyMsg({
-            replyId: null,
-            text: '',
-            user: null,
-          });
-          const message = {
-            sender: idUser,
-            reciever: idReciever,
-            roomId: roomId,
-            messages: [
-              {
-                text: newMessage[0].text,
-                createdAt: Date.now(),
-                user: {
-                  _id: idUser,
-                  name: username,
-                  avatar: image,
-                },
-                image: '',
-                sent: true,
-                received: true,
-                seen: false,
-                deleteAt: '',
-                hiddenTo: [],
-                isReply: {},
-              },
-            ],
-          };
-          Promise.all([
-            await submitMessageData(message),
-            await axios.post(
-              'https://fcm.googleapis.com/fcm/send',
-              {
-                to: fcmReciever,
-                notification: {
-                  body: messages[0].text,
-                  title: messages[0].user.name,
-                },
-              },
-              {
-                headers: {
-                  Authorization: `key=AAAAOF2GCJw:APA91bGkMJCFJaLMwvbUHOn4HWjNQ7m67eHx1BavDp4yLV3tf2AlgQtss4P0y2X-15qODleynzIIpTHL-lwSSOu-kS5K7sgMiXal4olF5t3ZssGdfJZZ_1htkvNBVlIG1stixCXZQnOy`,
-                  'Content-Type': 'application/json',
-                },
-              },
-            ),
-          ]).then(error => {
-            console.log(error);
-          });
-        }
+        ],
+      };
+      const promises = [submitMessageData(message)];
+      if (arrayListUser.length > 0) {
+        promises.push(sendNotification(listOffline, message.messages));
       }
+
+      Promise.all(promises)
+        .then(results => {
+          console.log(results);
+        })
+        .catch(error => {
+          console.error(error);
+        });
     }
   };
 
@@ -560,20 +554,13 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
     );
   };
 
-
-  
-
   useEffect(() => {
-    setValue();
     (async () => {
-      const newToken = await getToken();
-      const idFirst = await getId();
-      let name = await getUsername();
       await getAllChat();
       // connect socket io
       socket.connect();
       socket.emit('connected', {
-        name: name,
+        name: user.username,
         room: roomId,
       });
       // reciever message in socket
@@ -584,15 +571,15 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           createdAt: data.messages[0].createdAt,
           user: {
             _id: data.messages[0].user._id,
-            name: userName ? userName : username,
-            avatar: imageRecever ? imageRecever : image,
+            name: userName ? userName : user.username,
+            avatar: imageRecever ? imageRecever : user.image,
           },
           image: data.image ? data.image : '',
         };
         setMessages((previousMessages: any) =>
           GiftedChat.append(
             previousMessages,
-            data.receverId !== idUser ? data.messages : [imageMsg],
+            data.receverId !== user._id ? data.messages : [imageMsg],
           ),
         );
       });
@@ -617,9 +604,16 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               alignItems: 'center',
             }}>
             <TouchableOpacity
-              onPress={() => {
-                socket.emit('leave_room', {username: username, room: roomId});
+              onPress={ async() => {
+                socket.emit('leave_room', {
+                  username: user.username,
+                  room: roomId,
+                });
                 navigation.goBack();
+                await requestConfig("POST", user.token, '', `api/left-room/${roomId}`, {
+                  fcmToken: user.fcmToken
+                }, null, true)
+
               }}>
               <LeftSVG width={20} height={18} />
             </TouchableOpacity>
@@ -632,7 +626,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               }}>
               <Image
                 source={
-                  imageRecever !== ''
+                  imageRecever
                     ? {uri: `${imageRecever}`}
                     : {
                         uri: 'https://hope.be/wp-content/uploads/2015/05/no-user-image.gif',
@@ -678,8 +672,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               onPress={() => console.log('search')}
               style={{
                 marginRight: 8,
-              }}>
-            </TouchableOpacity>
+              }}></TouchableOpacity>
             <TouchableOpacity
               onPress={() => console.log('Menu')}
               style={{
@@ -693,11 +686,11 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         <View style={{flex: 1, backgroundColor: '#fff'}}>
           <GiftedChat
             messages={messages}
-            onSend={messages => onSendMessage(messages)}
+            onSend={messages => onSendMessage(messages as any)}
             user={{
-              _id: idUser,
-              name: username,
-              avatar: image,
+              _id: user._id,
+              name: user.username,
+              avatar: user.image,
             }}
             renderBubble={renderBubble}
             renderInputToolbar={renderInputToolbar}

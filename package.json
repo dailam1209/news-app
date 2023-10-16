@@ -38,6 +38,7 @@
     "expo-secure-store": "^12.5.0",
     "expo-sharing": "^11.5.0",
     "expo-status-bar": "^1.6.0",
+    "form-data": "^4.0.0",
     "image-size": "^1.0.2",
     "json-stringify-safe": "^5.0.1",
     "jwt-decode": "^3.1.2",

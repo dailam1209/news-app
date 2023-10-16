@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
-import {View, StyleSheet, ScrollView} from 'react-native';
+import React, {useEffect} from 'react';
+import {View, StyleSheet, ScrollView, FlatList} from 'react-native';
 import Iterm from './Iterm';
 import {useAppDispatch, useAppSelector} from '../untils/useHooks';
 import {changeUrl} from '../reducer/Url/urlRedux';
 import Loading from '../common/Loading';
-import  {REACT_APP_API_URL}  from '@env';
+import {REACT_APP_API_URL} from '@env';
 
 interface listProp {
   listNew: Array<any>;
@@ -13,7 +13,7 @@ function Home({navigation}: any) {
   // handle url and change screen
   const dispatch = useAppDispatch();
   const listNew = useAppSelector(state => state.listNew.listNew);
-  const user = useAppSelector(state => state.user.user) 
+  const user = useAppSelector(state => state.user.user);
 
   const handleGoToDetail = (title: string) => {
     dispatch(changeUrl(title));
@@ -22,19 +22,22 @@ function Home({navigation}: any) {
   const itemsPerRow = 2;
   const numberOfRows = Math.ceil(listNew?.length / itemsPerRow);
   const urlAgainToStart = () => {
-    dispatch( changeUrl(`${REACT_APP_API_URL}`))
-  }
+    dispatch(changeUrl(`${REACT_APP_API_URL}`));
+  };
 
   useEffect(() => {
-    console.log('user redux' , user);
     urlAgainToStart();
-  })
+  });
 
   return (
     <>
       {listNew && Array.from(listNew).length > 0 ? (
-        <ScrollView>
-          <View
+        <ScrollView
+          style={{
+            width: '100%',
+            margin: 'auto',
+          }}>
+          {/* <View
             style={{
               marginBottom: 60,
             }}>
@@ -53,7 +56,23 @@ function Home({navigation}: any) {
                 </View>
               ))}
             </View>
-          </View>
+          </View> */}
+          <FlatList
+            numColumns={2}
+            initialNumToRender={200}
+            style={{
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+            data={listNew}
+            renderItem={({item, index}) => (
+              <Iterm
+                key={index}
+                onPress={() => handleGoToDetail(item.url)}
+                iterm={item}
+              />
+            )}
+          />
         </ScrollView>
       ) : (
         <Loading />

@@ -65,10 +65,11 @@ function AppNavigator() {
           component={Home}
         />
         <Stack.Screen
-          name="BottomTabNavigation"
+          name= "BottomTabNavigation"
           component={BottomTabNavigation}
           options={({route}: any) => ({
-            headerLargeTitle: true,
+            headerLargeTitle: false,
+            headerShown: true,
             title: 'VietNam News Online',
           })}
         />
@@ -94,7 +95,6 @@ function AppNavigator() {
           component={ChangePass}
           options={({route}: any) => ({
             headerLargeTitle: true,
-            headerShown: false,
             title: 'VietNam News Online',
             headerRight: () => (
                   <IconShare />

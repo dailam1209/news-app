@@ -1,5 +1,10 @@
-import {useRef, useState, useEffect} from 'react';
-import {ActivityIndicator, Alert, ImageBackground} from 'react-native';
+import {useRef, useState, useEffect, useCallback} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+  Platform,
+} from 'react-native';
 import 'react-native-gesture-handler';
 import {
   Pressable,
@@ -9,31 +14,33 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
-  ToastAndroid
+  ToastAndroid,
 } from 'react-native';
 import {BottomSheetModal, BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
-import { images } from '../constants';
+import {images} from '../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import {useIsFocused} from '@react-navigation/native';
 import InputField from '../components/InputFiled';
 import CameraSVG from '../assets/misc/camera-icon.svg';
-import { useAppDispatch, useAppSelector } from '../untils/useHooks';
-import { emailRegex, phoneRegex } from '../untils/regex';
-import { requestConfig } from '../helpers/newApi';
-import { changeUser } from '../reducer/User/userRedux';
-import { userWithout } from '../helpers/fixDataLocal';
-
+import {useAppDispatch, useAppSelector} from '../untils/useHooks';
+import {emailRegex, phoneRegex} from '../untils/regex';
+import {requestConfig} from '../helpers/newApi';
+import {changeUser} from '../reducer/User/userRedux';
+import {userWithout} from '../helpers/fixDataLocal';
+import axios from 'axios';
+import {REACT_APP_API_URL} from '@env';
+import { AnimatedToast } from '../common/AnimatedToast';
 const snapPoints = ['48%'];
+var FormData = require('form-data');
 
 export default function EditProfile() {
-  
   const isFocused = useIsFocused();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.user.user);
+  const userGlocal = useAppSelector(state => state.user.user);
   const [username, setUsername] = useState<String>('');
   const [email, setEmail] = useState<String>('');
   const [phone, setPhone] = useState<String>('');
@@ -43,19 +50,20 @@ export default function EditProfile() {
   const [isLoading, setIsLoading] = useState<Boolean>(false);
   const [isOpen, setIsOpen] = useState<Boolean>(false);
   const bottomSheetModalRef = useRef<any>(null);
-  const [image, setImage] = useState<any>('');
+  const [image, setImage] = useState<any>();
+  const [ showAnimatedToast, setShowAnimatedToast ] = useState<any>(false);
 
   // change name
   const changeName = (e: string) => {
     setUsername(e);
   };
   const usernameOnblur = () => {
-    if(username.length <= 4) {
+    if (username.length <= 4) {
       setErrorName('Please enter username more than 4 characters.');
       return false;
     } else {
       setErrorName('');
-      setUsername(username)
+      setUsername(username);
       return true;
     }
   };
@@ -108,75 +116,82 @@ export default function EditProfile() {
   const addImage = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
-      // quality: 1,
+      quality: 1,
       includeBase64: false,
-      // maxHeight: 200,
-      // maxWidth: 200,
+      // maxHeight: 100,
+      // maxWidth: 100,
     });
     if (result.didCancel && result.didCancel == true) {
     } else {
-      setImage(result?.assets[0]?.uri as string);
+      setImage(result?.assets[0].uri);
     }
   };
 
   const getAllvalueLocal = async () => {
-    setImage(user.image);
-    setPhone(user.phone);
-    setUsername(user.username);
-    setEmail(user.email);
-  }
+    setImage(userGlocal.image);
+    setPhone(userGlocal.phone);
+    setUsername(userGlocal.username);
+    setEmail(userGlocal.email);
+  };
+
 
   // submit profile
   const submmitUpdateProfile = async () => {
     setIsLoading(true);
+    const form = new FormData();
     const photo = {
-      uri: image,
+      uri: image as string,
       type: 'image/jpeg',
       name: 'name',
     };
+    form.append('image', photo);
+    const body = {username: username, phone: phone, email: email};
 
-    const form = new FormData();
-    form.append('avatar', photo as any);
-    form.append('username', username as string);
-    form.append('phone', phone as any);
-    form.append('email', email as string);
+      Object.keys(body).forEach((key) => {
+        form.append(key, body[key]);
+    });
 
-    let reponse = await requestConfig("PUT", user?.token, `'content-type': 'multipart/form-data'`, `upload/update/${user?._id}`, form, null, true );
-    if(reponse.status == 200 ) {
-      const formatUser = userWithout(reponse.data.user);
-      dispatch( changeUser(formatUser));
-      await AsyncStorage.setItem('user', JSON.stringify(formatUser));
+    const config = {
+      headers: {
+        Accpect: 'application/json',
+        'Content-type': 'multipart/form-data',
+        Authorization: `Bearer ${userGlocal.token}`,
+      },
+    };
+    
+    try {
+      const response = await axios.post(
+        `${REACT_APP_API_URL}/upload/update/${userGlocal._id}`,
+        form,
+        config,
+        );
+        if (response.status == 200) {
+          let user = response.data.user;
+          user.token = userGlocal.token;
+          const formatUser = await userWithout(user);
+          dispatch(changeUser(formatUser));
+          await AsyncStorage.setItem('user', JSON.stringify(formatUser));
+          setIsLoading(false);
+          setShowAnimatedToast(true);
+      }
+        
+     
+    } catch (error) {
+      setIsLoading(false);
+      Alert.alert(`${error}`);
     }
-  //   const config = {
-  //     headers: {
-  //       Authorization: `Bearer ${user.token}`,
-  //       'content-type': 'multipart/form-data',
-  //     },
-  //   };
-  //   try {
-  //     const response = await axios.put(
-  //       `${REACT_APP_API_URL}/upload/update/${user._id}`,
-  //       form,
-  //       config,
-  //     );
-  //     const data = await response.data.user[0];
-  //     if (response.status == 200) {
-  //       await AsyncStorage.setItem('user', JSON.stringify(data));
-  //       setIsLoading(false);
-  //     }
-  //   } catch (error) {
-  //     setIsLoading(false);
-  //     Alert.alert(`${error}`);
-  //   }
   };
 
-
   useEffect(() => {
-    getAllvalueLocal()
+    getAllvalueLocal();
   }, [isFocused]);
 
   return (
+    <>
+   <AnimatedToast show={showAnimatedToast} onPress={() => setShowAnimatedToast(false)} text='You have updated profile.'/>
+    
     <GestureHandlerRootView style={{flex: 1, position: 'relative'}}>
+      
       <View
         style={{
           marginTop: 20,
@@ -207,23 +222,24 @@ export default function EditProfile() {
                 width: 100,
               }}
               imageStyle={{borderRadius: 50}}>
-              <View style={{
-                flexDirection: 'column',
-                justifyContent: 'center',
-                bottom: 0,
-                right: 0,
-                position: 'absolute',
-                alignItems: 'center',
-              }}>
-                  <CameraSVG
-                    color='white'
-                    style={{
-                      width:  30,
-                      height: 30,
-                      backgroundColor: '#3333',
-                      borderRadius: 10,
-                    }}
-                  />
+              <View
+                style={{
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  bottom: 0,
+                  right: 0,
+                  position: 'absolute',
+                  alignItems: 'center',
+                }}>
+                <CameraSVG
+                  color="white"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    backgroundColor: '#3333',
+                    borderRadius: 10,
+                  }}
+                />
               </View>
             </ImageBackground>
           </TouchableOpacity>
@@ -233,7 +249,7 @@ export default function EditProfile() {
               fontWeight: '600',
               marginTop: 10,
             }}>
-            {user.username}
+            {userGlocal.username}
           </Text>
         </View>
         {/* detail */}
@@ -255,7 +271,7 @@ export default function EditProfile() {
                 height: 40,
               }}>
               <InputField
-                label={user.username}
+                label={userGlocal.username}
                 icon={
                   <Image
                     source={{
@@ -272,7 +288,7 @@ export default function EditProfile() {
                 keyboardType={undefined}
                 inputType={undefined}
                 fieldButtonFunction={() => {}}
-                value={user.username}
+                value={userGlocal.username}
                 error={errorName}
                 onBlur={() => usernameOnblur()}
                 valueChangeFunction={changeName}
@@ -286,7 +302,7 @@ export default function EditProfile() {
               marginTop: 20,
               alignContent: 'center',
             }}>
-            <Text style={styles.textAboveInput} >Email:</Text>
+            <Text style={styles.textAboveInput}>Email:</Text>
             <View
               style={{
                 height: 40,
@@ -458,6 +474,7 @@ export default function EditProfile() {
         <></>
       )}
     </GestureHandlerRootView>
+    </>
   );
 }
 const styles = StyleSheet.create({
@@ -510,7 +527,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   textAboveInput: {
-      fontSize: 16,
-      fontWeight: '600'
-  }
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

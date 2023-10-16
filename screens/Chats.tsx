@@ -13,44 +13,41 @@ import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
 import {FONTS, COLORS} from '../constants';
-import { images }from '../constants';
+import {images} from '../constants';
 import AcceptSVG from '../assets/misc/accepct-icon.svg';
-import { formatTime} from '../untils/formatDate';
+import {formatTime} from '../untils/formatDate';
 import {useAppDispatch, useAppSelector} from '../untils/useHooks';
-import { fetchAllChats, fetchAllFriend } from '../reducer/User/userRedux';
-import { useSelector } from 'react-redux';
-import { checkHaveRoom} from '../reducer/User/userService';
-import  {REACT_APP_API_URL}  from '@env';
-import { isExpiresIn } from '../helpers/isExpried';
-
+import {fetchAllChats, fetchAllFriend} from '../reducer/User/userRedux';
+import {useSelector} from 'react-redux';
+import {checkHaveRoom} from '../reducer/User/userService';
+import {REACT_APP_API_URL} from '@env';
+import {isExpiresIn} from '../helpers/isExpried';
 
 const Chats: React.FC<{navigation: any}> = ({navigation}) => {
-
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.user.user)
+  const user = useAppSelector(state => state.user.user);
   const friends = useSelector((state: any) => state.user.list.friend);
   const chats = useAppSelector((state: any) => state.user.list.chat);
-  const isLoading = useAppSelector((state) => state.user.isLoading);
+  const sortedChats = chats?.slice().sort((a: any, b: any) => b.createAt.localeCompare(a.createAt));
+
+  const isLoading = useAppSelector(state => state.user.isLoading);
   const numberMessage = 0;
 
   const [search, setSearch] = useState('');
-  const [filteredUser, setFilteredUsers] = useState(chats)
+  const [filteredUser, setFilteredUsers] = useState([] as any);
   const isFocused = useIsFocused();
-
 
   const handleSearch = (text: string) => {
     setSearch(text);
-    if(text) {
-      const filteredData = chats.filter(user =>
+    if (text) {
+      const filteredData = sortedChats.filter(user =>
         user.username.toLowerCase().includes(text.toLowerCase()),
       );
       setFilteredUsers(filteredData);
     } else {
-      setFilteredUsers(chats);
+      setFilteredUsers(sortedChats);
     }
   };
-
- 
 
   const onRoom = async (idRoom: string) => {
     axios
@@ -72,21 +69,27 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
   };
 
   const checkhaveRoomInDatabase = async (received, idOfUser, item) => {
-    console.log(received, idOfUser, item);
-    const idOfRoom = await checkHaveRoom(received, idOfUser, [], '', '', user.token);
-    if(idOfRoom) {
+    const idOfRoom = await checkHaveRoom(
+      received,
+      idOfUser,
+      [],
+      '',
+      '',
+      user.token,
+    );
+    if (idOfRoom) {
       navigation.navigate('PersonalChat', {
         userName: item.username,
-        reciever:item.id,
+        reciever: item.id,
         roomId: idOfRoom,
-        imageRecever: item.image,
+        imageRecever: item.imageUser,
         fcmReciever: item.fcmToken,
         isOnline: item.isOnline,
       });
     }
-  }
+  };
 
-  async function fetchData () {
+  async function fetchData() {
     try {
       await Promise.all([
         dispatch(fetchAllChats(user)),
@@ -95,10 +98,12 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
     } catch (error) {
       console.error('Error dispatching actions:', error);
     }
-  };
+  }
 
   useEffect(() => {
-    fetchData();
+    if (isFocused) {
+      fetchData();
+    }
   }, [isFocused]);
 
   const renderItem = ({item, index}: any) => (
@@ -156,12 +161,19 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
             )}
 
             <Image
-              source={{ uri : user.image ? user.image : images.noneUser}}
+              source={{uri: item?.imageUser ? item.imageUser : images.noneUser}}
               resizeMode="contain"
               style={{
                 height: 50,
                 width: 50,
-                borderRadius: 25,
+                borderRadius: 50, // Bo tròn ảnh thành hình tròn
+                borderColor: 'lightgray', // Màu xám nhẹ
+                borderWidth: 1, // Độ dày của viền
+                shadowColor: 'gray', // Màu đổ bóng
+                shadowOffset: {width: 0, height: 2}, // Độ dịch chuyển đổ bóng
+                shadowOpacity: 0.5, // Độ trong suốt của đổ bóng
+                shadowRadius: 2, // Bán kính của đổ bóng
+                elevation: 5, // Độ nâng của đổ bóng (cho Android)
               }}
             />
           </View>
@@ -171,34 +183,54 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
               justifyContent: 'center',
             }}>
             <Text style={{...FONTS.h4, marginBottom: 4}}>
-            { item.typeRoom == 'group' && item.nameRoom}
-              {item.typeRoom == 'one' && item.username}
-              </Text>
+              {item.nameRoom}
+            </Text>
             <View
               style={{
                 flexDirection: 'row',
+                height: 20,
               }}>
-              <Text style={[{
-                fontSize: 14,
-              },
-                numberMessage > 0 ? {
-                  color: COLORS.black } : {color: COLORS.secondaryGray}
-              ]}>
-                { item.type == 'group' && item.nameRoom}
-                
-                { user.username.localeCompare(item.sender.username) === 0 && item.sender.id === user._id ?  'Bạn:'  :`${item.sender.username}:`  }{' '}
-                {item.text}
+              <Text
+                style={[
+                  {
+                    fontSize: 14,
+                    width: 'auto',
+                    maxWidth: 210,
+                    overflow: 'hidden',
+                  },
+                  numberMessage > 0
+                    ? {
+                        color: COLORS.black,
+                      }
+                    : {color: COLORS.secondaryGray},
+                ]}>
+                {item.type == 'group' && item.nameRoom}
+                {user?.username?.localeCompare(item?.sender?.username) === 0 &&
+                item.sender.id === user._id
+                  ? 'Bạn:'
+                  : `${item.sender.username}:`}{' '}
+                {item.text !== '' && item.image === ''
+                  ? item.text.length > 21
+                    ? `${item.text.substring(0, 21)}...`
+                    : item.text
+                  : 'Đã gửi hình ảnh'}
               </Text>
               <View
                 style={{
-                  width: 3.2,
-                  height: 3.2,
-                  backgroundColor: COLORS.secondaryGray,
-                  top: '6.2%',
-                  marginLeft: 4,
-                  marginRight: 4,
-                  borderRadius: 3,
-                }}></View>
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}>
+                <View
+                  style={{
+                    width: 3.2,
+                    height: 3.2,
+                    backgroundColor: COLORS.secondaryGray,
+                    top: '6.4%',
+                    marginLeft: 8,
+                    marginRight: 4,
+                    borderRadius: 3,
+                  }}></View>
+              </View>
               <Text style={{fontSize: 14, color: COLORS.secondaryGray}}>
                 {formatTime(item.createAt)}
               </Text>
@@ -206,27 +238,32 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
           </View>
         </View>
         <View>
-          {item.count < 0 && <AcceptSVG width={10} height={60} />}
-          
+          {item.count < 1 && <AcceptSVG width={10} height={60} backgroundColor={COLORS.secondaryGray} color={COLORS.secondaryGray}/>}
 
-          { item.count > 0 && <Text style={{
-            width: 'auto',
-            height: 'auto',
-            padding: 2,
-            textAlign: 'center', 
-            alignItems: 'center', 
-            fontSize: 14,
-            borderRadius: 10,
-            backgroundColor: COLORS.green,
-            color: COLORS.secondaryWhite,
-          }}>{' '}{item.count > 5 ? '+5' : item.count} </Text>}
+          {item.count !== 0 && item.sender.id !== user._id && (
+            <Text
+              style={{
+                width: 'auto',
+                height: 'auto',
+                padding: 2,
+                textAlign: 'center',
+                alignItems: 'center',
+                fontSize: 14,
+                borderRadius: 10,
+                backgroundColor: COLORS.green,
+                color: COLORS.secondaryWhite,
+              }}>
+              {' '}
+              {item.count > 5   ? '+5' : item.count}{' '}
+            </Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
   return (
     <SafeAreaView style={{flex: 1, position: 'relative'}}>
-      { isLoading == false ? (
+      {isLoading == false ? (
         <PageContainer>
           <View style={{flex: 1}}>
             <View
@@ -242,18 +279,20 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 style={{
                   width: 'auto',
                   height: 30,
-                  backgroundColor: '#ccc',
+                  backgroundColor: COLORS.secondaryGray,
+                 
                   borderRadius: 8,
                   padding: 4,
+                  elevation: 10,
                 }}
                 onPress={async () => {
-                 await isExpiresIn();
-                  // navigation.navigate('AddGroup');
+                  navigation.navigate('AddGroup');
                 }}>
                 <Text
                   style={{
                     fontSize: 14,
                     fontWeight: '600',
+                    color: COLORS.secondaryWhite,
                   }}>
                   Add group
                 </Text>
@@ -308,11 +347,24 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                     <View
                       style={{
                         flexDirection: 'column',
-                        alignItems: 'center',
+                        alignItems: 'left',
                         justifyContent: 'center',
                       }}>
+                         <View
+                style={{
+                  height: 14,
+                  width: 14,
+                  borderRadius: 7,
+                  backgroundColor: COLORS.green,
+                  borderColor: COLORS.white,
+                  borderWidth: 2,
+                  position: 'absolute',
+                  bottom: '35%',
+                  right: 19.8,
+                  zIndex: 1000,
+                }}></View>
                       <TouchableOpacity
-                        onPress={ () => 
+                        onPress={() =>
                           checkhaveRoomInDatabase(item.id, user._id, item)
                         }
                         style={{
@@ -320,16 +372,25 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                           marginRight: 22,
                         }}>
                         <Image
-                          source={{ uri : user.image ? user.image : images.noneUser}}
-                          resizeMode="cover"
+                          source={{
+                            uri: item.image ? item.image : images.noneUser,
+                          }}
+                          resizeMode="contain"
                           style={{
                             height: 50,
                             width: 50,
-                            borderRadius: 25,
+                            borderRadius: 50, // Bo tròn ảnh thành hình tròn
+                            borderColor: 'lightgray', // Màu xám nhẹ
+                            borderWidth: 1, // Độ dày của viền
+                            shadowColor: 'gray', // Màu đổ bóng
+                            shadowOffset: {width: 0, height: 2}, // Độ dịch chuyển đổ bóng
+                            shadowOpacity: 0.5, // Độ trong suốt của đổ bóng
+                            shadowRadius: 2, // Bán kính của đổ bóng
+                            elevation: 5, // Độ nâng của đổ bóng (cho Android)
                           }}
                         />
                       </TouchableOpacity>
-                      <Text>{item.username?.substring(0, 5)}...</Text>
+                      <Text>{item.username?.substring(0, 8)}...</Text>
                     </View>
                   </View>
                 )}
@@ -365,7 +426,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 paddingBottom: 100,
               }}>
               <FlatList
-                data={filteredUser}
+                data={search.length > 0 ? filteredUser : sortedChats}
                 renderItem={renderItem}
                 keyExtractor={item => item.roomId?.toString()}
               />

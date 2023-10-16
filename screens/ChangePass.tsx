@@ -7,14 +7,16 @@ import LinearGradient from 'react-native-linear-gradient';
 import Lock from '../assets/misc/lock-line-icon.svg';
 import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
+import { requestConfig } from '../helpers/newApi';
+import { AnimatedToast } from '../common/AnimatedToast';
 
 interface ChangePassProps {
   navigation: any;
 }
 
 const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
-  const [changeEye1, setChangeEye1] = useState(false);
-  const [changeEye2, setChangeEye2] = useState(false);
+  const [changeEye1, setChangeEye1] = useState(true);
+  const [changeEye2, setChangeEye2] = useState(true);
 
   const tongleChangeEye = (number: Number) => {
     if (number == 1) {
@@ -27,6 +29,7 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [showToast, setShowToast] = useState<boolean>(false);
 
   const handleCheckPassword = () => {
     if (password.trimStart() !== confirmPassword.trimStart()) {
@@ -44,7 +47,24 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
     setConfirmPassword(value); // Update the confirmPassword state
   };
 
+  const submitChangePass = async () => {
+    if(password && confirmPassword) {
+      const reponse  = await requestConfig("POST", "", null, "/reset-password", {
+        password: password,
+        confirmPassword: confirmPassword
+      }, null, false);
+
+      if(reponse.status == 200) {
+        navigation.navigate('Login')
+      } else {
+        setShowToast(true)
+      }
+    }
+  }
+
   return (
+    <>
+    <AnimatedToast show={showToast} text={error} onPress={() => setShowToast(false)} />
     <SafeAreaView
       style={{
         flex: 1,
@@ -72,84 +92,64 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
           {/* Body input */}
           <InputField
             label={'New password'}
-            icon={
-              <Lock
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon1={
-              <Eye
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon2={
-              <Eye2
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<Lock
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon1={<Eye
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon2={<Eye2
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             isChange={changeEye1}
             fieldButtonFunction={() => tongleChangeEye(1)}
             inputType={changeEye1 ? 'showpass' : 'password'}
             keyboardType={undefined}
             valueChangeFunction={handlePasswordChange}
             value={password}
-            error={error}
-          />
+            error={error} isBorderRadius={undefined} onBlur={() => {}}          />
           <InputField
             label={'Confirm password'}
-            icon={
-              <Lock
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon1={
-              <Eye
-                color="#666"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
-            icon2={
-              <Eye2
-                color="red"
-                style={{
-                  marginRight: 5,
-                  width: 20,
-                  height: 30,
-                }}
-              />
-            }
+            icon={<Lock
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon1={<Eye
+              color="#666"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
+            icon2={<Eye2
+              color="red"
+              style={{
+                marginRight: 5,
+                width: 20,
+                height: 30,
+              }} />}
             isChange={changeEye2}
             fieldButtonFunction={() => tongleChangeEye(2)}
             inputType={changeEye2 ? 'showpass' : 'password'}
             keyboardType={undefined}
             valueChangeFunction={handleConfirmPasswordChange}
             value={confirmPassword}
-            error={error}
-          />
+            error={error} isBorderRadius={undefined} onBlur={() => {}}          />
         </View>
         {/* register button */}
         <View
@@ -187,6 +187,7 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
         </View>
       </View>
     </SafeAreaView>
+    </>
   );
 };
 

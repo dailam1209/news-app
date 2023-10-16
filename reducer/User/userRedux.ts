@@ -1,11 +1,13 @@
 import {createSlice} from '@reduxjs/toolkit';
 import {createAsyncThunk} from '@reduxjs/toolkit';
 import {getAllChat, getAllUser} from './userService';
+import { requestConfig } from '../../helpers/newApi';
 
 
 export const fetchAllFriend = createAsyncThunk('user/getFriend', async (user: any) => {
   try {
-    const data = await getAllUser('friend', user?.token, user._id);
+    // const data = await getAllUser('friend', user?.token, user._id);
+    const data = await requestConfig("GET", user.token, null, `friend/${user._id}`, null, null, true);
     return data.data.users;
   } catch (error) {
     Error(error);
@@ -15,7 +17,7 @@ export const fetchAllFriend = createAsyncThunk('user/getFriend', async (user: an
 
 export const fetchAllChats = createAsyncThunk('user/getAllChat', async (user: any) => {
   try {
-    const data = await getAllChat('get-chats', user?.token as string);
+    const data = await requestConfig("GET", user.token, null, 'get-chats', null, null, true)
     return data.data.lastMessageAll;
   } catch (error) {
     Error(error);

@@ -16,9 +16,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
 import {COLORS, FONTS} from '../constants';
 import {AntDesign, Ionicons} from '@expo/vector-icons';
-import UserImage = require('../assets/images/user-image.png');
 import UserCount = require('../assets/images/count-user-image.png');
-import {useDebounce} from '../untils/useDebounce';
+import { images }from '../constants';
+import {useDebounce} from '../hooks/useDebounce';
 import  {REACT_APP_API_URL}  from '@env';
 import { useAppSelector } from '../untils/useHooks';
 
@@ -93,7 +93,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
             marginRight: 22,
           }}>
           <Image
-            source={item.image !== '' ? {uri: `${item.image}`} : UserImage}
+            source={{ uri:  item.image !== '' ? item.image : images.noneUser}}
             resizeMode="contain"
             style={{
               height: 50,
@@ -150,6 +150,16 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
     try {
       const postAdd = await axios.post(`${REACT_APP_API_URL}/add-friend/${idAdd}`,data, config);
       if(postAdd.status == 200 ){
+        let arrayChangeFriendAdd = []
+        filteredUsers.map((item) => {
+          console.log("item", item);
+          if(item.id == idAdd) {
+            item.isFriend = true
+          }
+          arrayChangeFriendAdd.push(item)
+
+        });
+          setFilteredUsers(arrayChangeFriendAdd); 
         Alert.alert('Send add friend successfully.')
       }
     } catch (error) {

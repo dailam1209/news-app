@@ -20,6 +20,7 @@ import {emailRegex, passwordRegex} from '../untils/regex';
 import {changeUser} from '../reducer/User/userRedux';
 import {requestConfig} from '../helpers/newApi';
 import {userWithout} from '../helpers/fixDataLocal';
+import { AnimatedToast } from '../common/AnimatedToast';
 
 interface LoginProps {
   navigation: any;
@@ -29,6 +30,8 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   const [changeEye, setChangeEye] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [ showToast, setShowToast] = useState<boolean>(false)
+  const [ errorLogin, setErrorLogin ] = useState<String>('');
   const [errorEmail, setErrorEmail] = useState<String>('');
   const [errorPassword, setErrorPassword] = useState<String>('');
 
@@ -59,11 +62,9 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
 
   const passwordOnblur = () => {
     if (
-      !password ||
-      password.length < 8 ||
-      passwordRegex.test(password as string) === false
+      !password
     ) {
-      setErrorPassword('Please enter password same: Lamdai1209@');
+      setErrorPassword('Please enter password.');
       return false;
     } else {
       setErrorPassword('');
@@ -77,11 +78,10 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   const submitHandle = async () => {
     const isEmail = emailOnblur();
     const isPassword = passwordOnblur();
-    try {
       if (isEmail && isPassword) {
         setIsLoading(true);
         const reponse = await requestConfig(
-          'post',
+          'POST',
           '',
           null,
           'login',
@@ -91,26 +91,30 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
           },
           null,
         false);
+        console.log("reponse reponse", reponse);
         if (reponse.status == 200) {
           setIsLoading(false);
           let user = reponse.data.user;
           user.token = reponse.data.token;
           const formatUser = await userWithout(user);
-          // AsyncStorage.setItem('user', JSON.stringify(formatUser));
           dispatch(changeUser(formatUser));
           navigation.navigate('Home');
+        } else {
+          setIsLoading(false);
+          setErrorEmail('Please check email again.')
+          setErrorPassword('Please check password again.')
+          setErrorLogin(reponse.message)
+          setShowToast(true)
         }
       }
-    } catch (error) {
-      setIsLoading(false);
-      Alert.alert(`${error.message}`);
-    }
   };
 
   const tongleChangeEye = () => {
     setChangeEye(!changeEye);
   };
   return (
+    <>
+    <AnimatedToast text={errorLogin as string} onPress={() => setShowToast(false)} show={showToast}/>
     <SafeAreaView
       style={{
         flex: 1,
@@ -301,6 +305,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
         </View>
       </View>
     </SafeAreaView>
+    </>
   );
 };
 

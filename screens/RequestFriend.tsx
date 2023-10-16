@@ -22,6 +22,7 @@ export interface RequestFriendProps {
 }
 
 const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
+  const [filteredUsers, setFilteredUsers] = useState<any>(listUser);
 
   const acceptAddFriend = async (id: string) => {
     await axios({
@@ -31,6 +32,8 @@ const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
     })
       .then(function (response) {
         if (response.status == 200) {
+          const newData = filteredUsers.filter((item) => item._id !== id);
+          setFilteredUsers(newData); 
           Alert.alert(`Đã thêm bạn mới thành công.`);
         }
       })
@@ -170,7 +173,7 @@ const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
             paddingBottom: 100,
           }}>
           <FlatList
-            data={listUser}
+            data={filteredUsers}
             renderItem={renderItem}
             keyExtractor={item => item._id.toString()}
           />

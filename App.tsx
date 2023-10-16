@@ -1,5 +1,5 @@
 import React, {useEffect, useState, createContext, useContext, useRef} from 'react';
-import {AppState, StyleSheet, View, Text} from 'react-native';
+import {AppState, StyleSheet, View, Text, Dimensions} from 'react-native';
 import AppNavigator from './navigators/AppNavigator';
 import ModalShare from './common/ModelShare';
 import { getLocalStorage } from './untils/getLocalStorage';
@@ -18,6 +18,8 @@ const App = () => {
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const user = useAppSelector((state) => state.user.user);
+  const width = Dimensions.get('window').width;
+  const height = Dimensions.get('window').height;
 
 
   // post request online or offline
@@ -57,7 +59,6 @@ const App = () => {
       }, config)
       .then(async response => {
         if (response.status == 200) {
-          console.log('put fcmToken success.');
         }
       })
       .catch(error => {
@@ -85,9 +86,9 @@ const App = () => {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        // await postOnline(true)
+        await postOnline(true)
       } else {
-        // await postOnline(false)
+        await postOnline(false)
       }
 
       appState.current = nextAppState;
@@ -100,16 +101,23 @@ const App = () => {
   }, []);
 
   return (
-    <React.Fragment>
-      <AppNavigator />
-      {isTongle ? (
-        <View>
-          <ModalShare />
-        </View>
-      ) : (
-        <></>
-      )}
-    </React.Fragment>
+    // <React.Fragment>
+     <View style={{
+      flex: 1,
+      width: width,
+      height: height,
+      backgroundColor:'blue'
+     }}>
+        <AppNavigator />
+        {isTongle ? (
+          <View>
+            <ModalShare />
+          </View>
+        ) : (
+          <></>
+        )}
+     </View>
+    // </React.Fragment>
   );
 };
 

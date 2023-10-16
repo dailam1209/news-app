@@ -74,6 +74,7 @@ const BottomTabNavigation = ({ navigation }) => {
           elevation: 0,
           height: 60,
         },
+        tabBarActiveTintColor: 'red',
       }}>
       <Tab.Screen
         name="Home"

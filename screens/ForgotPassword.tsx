@@ -5,7 +5,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import EmailSVG from '../assets/misc/envelope-line-icon.svg';
 import axios from 'axios';
 import KeyCode from '../components/Code';
-import  {REACT_APP_API_URL}  from '@env'
+import {REACT_APP_API_URL} from '@env';
+import {requestConfig} from '../helpers/newApi';
+import {AnimatedToast} from '../common/AnimatedToast';
 
 interface ForgotPasswordProps {
   navigation: any;
@@ -15,7 +17,9 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({navigation}) => {
   const [changeEye, setChangeEye] = useState(false);
   const [errorEmail, setErrorEmail] = useState<String>('');
   const [confirmEmail, setConfirmEmail] = useState(false);
-  const [secondsRemaining, setSecondsRemaining] = useState(60); // 5 phút * 60 giây/phút
+  const [secondsRemaining, setSecondsRemaining] = useState(300); // 5 phút * 60 giây/phút
+  const [showToast, setShowToast] = useState<boolean>(false);
+  const [ confirmCode, setConfirmCode ] = useState<String>('');
   const [isRunning, setIsRunning] = useState(true);
   const [keyCode, setKeyCode] = useState<Number>(0);
 
@@ -25,48 +29,51 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({navigation}) => {
     setEmail(value);
   };
 
-
   const deleteCodeApi = async () => {
-    await axios({
-      method: 'post',
-      url: `${REACT_APP_API_URL}/delete-code`,
-      headers: {},
-      data: {
+    const reponse = await requestConfig(
+      'POST',
+      '',
+      null,
+      '/delete-code',
+      {
         email: email,
+        code: keyCode
       },
-    })
-      .then(res => {
-        if (res.status == 200) {
-          navigation.navigate('ChangePass');
-        }
-      })
-      .catch(error => {
-        Alert.alert(`${error.message}`)
-      });
-  }
+      null,
+      false,
+    );
 
+    if (reponse.status == 200) {
+      navigation.navigate('ChangePass');
+    } else {
+      setShowToast(true)
+    }
+  };
 
   useEffect(() => {
-    let countdownInterval;
+    let animationFrameId;
 
-    countdownInterval = setInterval(() => {
+    function updateTimer() {
       if (secondsRemaining === 0) {
-        clearInterval(countdownInterval);
         // Xử lý sau khi hết thời gian, ví dụ: Hiển thị thông báo.
+        deleteCodeApi();
       } else {
-        setSecondsRemaining(prevSeconds => prevSeconds - 1);
+        animationFrameId = requestAnimationFrame(updateTimer);
+        setSecondsRemaining((prevSeconds) => prevSeconds - 1);
       }
-    }, 1000);
-
+    }
+  
+    if (secondsRemaining > 0) {
+      animationFrameId = requestAnimationFrame(updateTimer);
+    }
+  
     return () => {
-      
-      clearInterval(countdownInterval);
+      cancelAnimationFrame(animationFrameId);
     };
   }, [secondsRemaining]);
-  
+
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
-
 
   const emailOnblur = () => {
     let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
@@ -82,9 +89,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({navigation}) => {
 
   const submitHandle = async () => {
     const isEmail = emailOnblur();
-    if(confirmEmail) {
+    if (confirmEmail) {
       setConfirmEmail(!confirmEmail);
-      
     } else {
       if (isEmail) {
         await axios({
@@ -108,111 +114,124 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-      }}>
-      <View
+    <>
+      <AnimatedToast
+        show={showToast}
+        text={'Code not match. Please wait and get code again.'}
+        onPress={() => setShowToast(false)}
+      />
+      <SafeAreaView
         style={{
-          paddingHorizontal: 25,
+          flex: 1,
+          justifyContent: 'center',
         }}>
-        {confirmEmail ? (
-          // enter keycode
-          <>
-          <View
-            style={{
-              margin: 'auto',
-              width: '100%',
-              alignItems: 'center',
-            }}>
-              <Text style={{
-                color: 'red',
-                marginBottom: 50
-              }}>{`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}</Text>
-            <KeyCode handleValue={e => setKeyCode(e)} />
-          </View>
-          </>
-        ) : (
-          // view confirm email
-          <View
-            style={{
-              alignItems: 'center',
-            }}>
-            {/*  title */}
-            <Text
-              style={{
-                fontFamily: 'Roboto-Medium',
-                fontSize: 32,
-                fontWeight: '800',
-                color: '#333',
-                marginBottom: 10,
-              }}>
-              Forgot Password
-            </Text>
-            {/* Body input */}
-            <InputField
-              label={'Email ID'}
-              icon={
-                <EmailSVG
-                  color="#666"
-                  style={{
-                    marginRight: 5,
-                    width: 20,
-                    height: 30,
-                  }}
-                />
-              }
-              icon1={''}
-              icon2={''}
-              isChange={false}
-              fieldButtonFunction={() => {}}
-              inputType={undefined}
-              keyboardType={undefined}
-              value={email}
-              error={errorEmail}
-              valueChangeFunction={emailChange}
-              onBlur={emailOnblur}
-            />
-          </View>
-        )}
-
-        {/* send button */}
         <View
           style={{
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginVertical: 25,
-            width: '100%',
-            height: 40,
-            marginTop: 50,
-            marginBottom: 40,
+            paddingHorizontal: 25,
           }}>
-          <LinearGradient
-            colors={['#AED6F1', '#3498DB']}
-            style={{
-              display: 'flex',
-              width: '100%',
-              paddingLeft: 15,
-              paddingRight: 15,
-              borderRadius: 20,
-            }}>
-            <TouchableOpacity onPress={() => submitHandle()}>
+          {confirmEmail ? (
+            // enter keycode
+            <>
+              <View
+                style={{
+                  margin: 'auto',
+                  width: '100%',
+                  alignItems: 'center',
+                }}>
+                <Text
+                  style={{
+                    color: 'red',
+                    marginBottom: 50,
+                  }}>{`${String(minutes).padStart(2, '0')}:${String(
+                  seconds,
+                ).padStart(2, '0')}`}</Text>
+                <KeyCode handleValue={e => setKeyCode(e)} />
+              </View>
+            </>
+          ) : (
+            // view confirm email
+            <View
+              style={{
+                alignItems: 'center',
+              }}>
+              {/*  title */}
               <Text
                 style={{
-                  textAlign: 'center',
-                  fontWeight: '600',
-                  fontSize: 20,
-                  padding: 4,
-                  color: 'white',
+                  fontFamily: 'Roboto-Medium',
+                  fontSize: 32,
+                  fontWeight: '800',
+                  color: '#333',
+                  marginBottom: 10,
                 }}>
-                {confirmEmail ? 'Confirm Code' : 'Send Email'}
+                Forgot Password
               </Text>
-            </TouchableOpacity>
-          </LinearGradient>
+              {/* Body input */}
+              <InputField
+                label={'Email ID'}
+                icon={
+                  <EmailSVG
+                    color="#666"
+                    style={{
+                      marginRight: 5,
+                      width: 20,
+                      height: 30,
+                    }}
+                  />
+                }
+                icon1={''}
+                icon2={''}
+                isChange={false}
+                fieldButtonFunction={() => {}}
+                inputType={undefined}
+                keyboardType={undefined}
+                value={email}
+                error={errorEmail}
+                valueChangeFunction={emailChange}
+                onBlur={emailOnblur}
+                isBorderRadius={undefined}
+              />
+            </View>
+          )}
+
+          {/* send button */}
+          <View
+            style={{
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginVertical: 25,
+              width: '100%',
+              height: 40,
+              marginTop: 50,
+              marginBottom: 40,
+            }}>
+            <LinearGradient
+              colors={['#AED6F1', '#3498DB']}
+              style={{
+                display: 'flex',
+                width: '100%',
+                paddingLeft: 15,
+                paddingRight: 15,
+                borderRadius: 20,
+              }}>
+              <TouchableOpacity onPress={() => {
+                !confirmEmail ?  submitHandle() : deleteCodeApi()
+              } }>
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    fontWeight: '600',
+                    fontSize: 20,
+                    padding: 4,
+                    color: 'white',
+                  }}>
+                  {confirmEmail ? 'Confirm Code' : 'Send Email'}
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 

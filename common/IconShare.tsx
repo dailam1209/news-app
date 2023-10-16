@@ -13,7 +13,7 @@ const IconShare = () => {
   const onShare = async () => {
     const options = {
         message: url,
-        title: "I am sending you application that you may be interested"
+        // title: "I am sending you application that you may be interested"
     }
     Share.open(options).then(
     ).catch(err => console.log(err))

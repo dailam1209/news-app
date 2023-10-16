@@ -19,7 +19,7 @@ export interface SentFriendProps {
 }
 
 const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
-  const [filteredUsers, setFilteredUsers] = useState<any>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any>(listUser);
 
   const deleteSentFriend = async (id: string) => {
     await axios({
@@ -130,7 +130,7 @@ const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
             paddingBottom: 100,
           }}>
           <FlatList
-            data={listUser}
+            data={filteredUsers}
             renderItem={renderItem}
             keyExtractor={item => item._id.toString()}
           />

@@ -40,7 +40,8 @@ export const requestConfig = async (
           };
         });
   } catch (error) {
-    console.log(error.message);
+    return error.response.data
+
   }
 };
 

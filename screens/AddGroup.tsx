@@ -16,11 +16,12 @@ import {COLORS, FONTS, images } from '../constants';
 import SearchSVG from '../assets/misc/search-icon.svg'
 import {useAppSelector} from '../untils/useHooks';
 import { requestConfig } from '../helpers/newApi';
+import { createMessageApi } from '../reducer/User/userService';
 
 
 const AddGroup = () => {
   const friends = useAppSelector(state => state.user.list.friend);
-  const user = useAppSelector( state => state.user.user);
+  const user = useAppSelector( (state) => state.user.user);
   const [search, setSearch] = useState<String>('');
   const [filteredUsers, setFilteredUsers] = useState(friends);
   const [isMargin, setIsMargin] = useState<Boolean>(true);
@@ -144,10 +145,12 @@ const AddGroup = () => {
       typeRoom: "group",
       name: nameGroup,
     }
+    console.log("selectedItems", selectedItems.length);
     if(selectedItems.length > 1 && nameGroup) {
-      await requestConfig("POST", user?.token, null, "/api/create-room", data, null, true)
+      const room = await requestConfig("POST", user?.token, null, "api/create-room", data, null, true)
+      await createMessageApi(user._id, user.id, room.data.id, 'group', user.token )
     } else {
-      Alert.alert('Please choose more than 2 user');
+      Alert.alert('Please choose more than 2 user or Enter group name');
     }
   };
 

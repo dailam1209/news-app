@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import PageContainer from '../components/PageContainer';
@@ -16,10 +16,12 @@ import LogoutSVG from '../assets/misc/logout-icon.svg';
 import  {REACT_APP_API_URL}  from '@env'
 import { useAppDispatch, useAppSelector } from '../untils/useHooks';
 import { changeUser } from '../reducer/User/userRedux';
+import { ModalModule } from '../common/Modal';
 
 const More = ({navigation}) => {
   const dispatch = useAppDispatch();
   const user  = useAppSelector((state) => state.user?.user);
+  const [ showModal, setShowModal ] = useState(false);
 
 
   // clear all data when logout
@@ -34,7 +36,6 @@ const More = ({navigation}) => {
         if (res.status == 200) {
           dispatch(changeUser(null))
           navigation.navigate('Home');
-          Alert.alert('Logout success.');
         }
       })
       .catch(error => {
@@ -45,6 +46,14 @@ const More = ({navigation}) => {
   return (
     <SafeAreaView style={{flex: 1}}>
       <PageContainer>
+        {
+          showModal && 
+        <ModalModule title="Xác nhận đăng xuất thông tin." onPress1={() => setShowModal(!showModal) }  onPress2={() => {
+          if (user) {
+            clearAllData();
+          }
+        }}/>
+        }
         <View
           style={{
             flexDirection: 'row',
@@ -143,9 +152,7 @@ const More = ({navigation}) => {
 
           <TouchableOpacity
             onPress={() => {
-              if (user?.token) {
-                clearAllData();
-              }
+              setShowModal(true)
             }}
             style={styles.touch}>
             <View style={[styles.touchTitle]}>

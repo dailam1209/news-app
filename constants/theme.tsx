@@ -49,7 +49,7 @@ export const FONTS = {
     },
     h1: { fontFamily: 'bold', fontSize: SIZES.h1, lineHeight: 36 },
     h2: { fontFamily: 'bold', fontSize: SIZES.h2, lineHeight: 30 },
-    h3: { fontFamily: 'bold', fontSize: SIZES.h3, lineHeight: 22 },
+    h3: { fontFamily: 'bold', fontSize: SIZES.h3, lineHeight: 22,  },
     h4: { fontFamily: 'bold', fontSize: SIZES.h4, lineHeight: 20 },
     h5: { fontFamily: 'bold', fontSize: SIZES.body5, lineHeight: 20 },
     body1: { fontFamily: 'regular', fontSize: SIZES.body1, lineHeight: 36 },

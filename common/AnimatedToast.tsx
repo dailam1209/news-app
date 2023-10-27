@@ -1,17 +1,19 @@
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {View, Text, Animated, Easing, StyleSheet} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Đảm bảo bạn đã cài đặt thư viện FontAwesome hoặc sử dụng một thư viện icon khác.
 import {COLORS} from '../constants';
 import SuccessSVG from '../assets/misc/success-icon.svg';
+import ErrorSVG from '../assets/misc/error-icon.svg';
 
 export interface AnimatedToastProps {
   show: any;
   text: string;
+  warring: boolean;
   onPress: () => void
 }
 
-export const AnimatedToast: React.FC<AnimatedToastProps> = ({show, onPress, text}) => {
+export const AnimatedToast: React.FC<AnimatedToastProps> = ({show, onPress, text, warring}) => {
   const animatedValue = new Animated.Value(0);
+  
 
   useEffect(() => {
     if(show) {
@@ -44,7 +46,6 @@ export const AnimatedToast: React.FC<AnimatedToastProps> = ({show, onPress, text
   };
 
   return (
-    <>
       <Animated.View
         style={[{
           transform: [
@@ -57,12 +58,16 @@ export const AnimatedToast: React.FC<AnimatedToastProps> = ({show, onPress, text
             },
           ]
         }, styles.toast]}>
-          <View style={styles.view}>
-          <SuccessSVG width={20} height='100%' backgroundColor={COLORS.secondaryWhite} color={COLORS.secondaryWhite}/>
+          <View style={[styles.view, warring ? {backgroundColor: COLORS.red} :{backgroundColor: COLORS.green}]}>
+            {warring ? <ErrorSVG width={20} height='100%' backgroundColor={COLORS.red} color={COLORS.secondaryWhite}/> : 
+           <SuccessSVG width={20} height='100%' backgroundColor={COLORS.secondaryWhite} color={COLORS.secondaryWhite}/> 
+            
+            }
+          
+
           <Text style={styles.text}> {text}</Text>
           </View>
       </Animated.View>
-    </>
   );
 };
 
@@ -80,7 +85,6 @@ const styles = StyleSheet.create({
   view: {
     flexDirection: 'row',
     width: 'auto',
-    backgroundColor: COLORS.green,
     height: 34,
     alignItems: 'center',
     paddingLeft: 6,

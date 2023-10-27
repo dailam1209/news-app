@@ -8,7 +8,7 @@ import {
     TextInput,
     Linking,
   } from 'react-native';
-import { useAppDispatch } from '../../untils/useHooks';
+import { useAppDispatch } from '../../hooks/useHooks';
 import { changeTongle } from '../../reducer/tongleShareRedux';
 import { changeNumber } from '../../reducer/numberRedux';
 

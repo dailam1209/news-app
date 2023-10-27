@@ -1,8 +1,6 @@
 import React, {useState} from 'react';
 import {Text, SafeAreaView, View, TouchableOpacity} from 'react-native';
 import InputField from '../components/InputFiled';
-import {MaterialIcons} from '@expo/vector-icons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import Lock from '../assets/misc/lock-line-icon.svg';
 import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
@@ -12,9 +10,11 @@ import { AnimatedToast } from '../common/AnimatedToast';
 
 interface ChangePassProps {
   navigation: any;
+  route: any
 }
 
-const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
+const ChangePass: React.FC<ChangePassProps> = ({navigation, route}) => {
+  const { email } = route.params;
   const [changeEye1, setChangeEye1] = useState(true);
   const [changeEye2, setChangeEye2] = useState(true);
 
@@ -49,7 +49,8 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
 
   const submitChangePass = async () => {
     if(password && confirmPassword) {
-      const reponse  = await requestConfig("POST", "", null, "/reset-password", {
+      const reponse  = await requestConfig("POST", "", null, "/change-password", {
+        email: email,
         password: password,
         confirmPassword: confirmPassword
       }, null, false);
@@ -64,7 +65,7 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
 
   return (
     <>
-    <AnimatedToast show={showToast} text={error} onPress={() => setShowToast(false)} />
+    <AnimatedToast warring={false} show={showToast} text={error} onPress={() => setShowToast(false)} />
     <SafeAreaView
       style={{
         flex: 1,
@@ -171,7 +172,7 @@ const ChangePass: React.FC<ChangePassProps> = ({navigation}) => {
               paddingRight: 15,
               borderRadius: 20,
             }}>
-            <TouchableOpacity onPress={() => handleCheckPassword()}>
+            <TouchableOpacity onPress={() => submitChangePass()}>
               <Text
                 style={{
                   textAlign: 'center',

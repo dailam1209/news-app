@@ -26,7 +26,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useIsFocused} from '@react-navigation/native';
 import InputField from '../components/InputFiled';
 import CameraSVG from '../assets/misc/camera-icon.svg';
-import {useAppDispatch, useAppSelector} from '../untils/useHooks';
+import {useAppDispatch, useAppSelector} from '../hooks/useHooks';
 import {emailRegex, phoneRegex} from '../untils/regex';
 import {requestConfig} from '../helpers/newApi';
 import {changeUser} from '../reducer/User/userRedux';
@@ -52,6 +52,8 @@ export default function EditProfile() {
   const bottomSheetModalRef = useRef<any>(null);
   const [image, setImage] = useState<any>();
   const [ showAnimatedToast, setShowAnimatedToast ] = useState<any>(false);
+  const [ notification, setNotification ] = useState<String>('');
+  const [ warring, setWarring ] = useState<boolean>(false);
 
   // change name
   const changeName = (e: string) => {
@@ -74,14 +76,14 @@ export default function EditProfile() {
   };
 
   //change phone
-  const phoneChange = (value: string) => {
-    console.log('phone change', value);
-    setPhone(value);
+  const phoneChange = (e: string) => {
+    setPhone(e);
   };
 
   // change phone
   const phoneOnblur = () => {
-    if (phoneRegex.test(phone as string) === false && phone == '') {
+    if (phoneRegex.test(phone as string) === false) {
+      console.log('co loi phone');
       setErrorPhone('Please enter again phone number.');
       return false;
     } else {
@@ -137,49 +139,48 @@ export default function EditProfile() {
 
   // submit profile
   const submmitUpdateProfile = async () => {
-    setIsLoading(true);
-    const form = new FormData();
-    const photo = {
-      uri: image as string,
-      type: 'image/jpeg',
-      name: 'name',
-    };
-    form.append('image', photo);
-    const body = {username: username, phone: phone, email: email};
-
-      Object.keys(body).forEach((key) => {
-        form.append(key, body[key]);
-    });
-
-    const config = {
-      headers: {
-        Accpect: 'application/json',
-        'Content-type': 'multipart/form-data',
-        Authorization: `Bearer ${userGlocal.token}`,
-      },
-    };
-    
-    try {
-      const response = await axios.post(
-        `${REACT_APP_API_URL}/upload/update/${userGlocal._id}`,
-        form,
-        config,
-        );
-        if (response.status == 200) {
-          let user = response.data.user;
-          user.token = userGlocal.token;
-          const formatUser = await userWithout(user);
-          dispatch(changeUser(formatUser));
-          await AsyncStorage.setItem('user', JSON.stringify(formatUser));
-          setIsLoading(false);
-          setShowAnimatedToast(true);
-      }
-        
+    if(phoneRegex.test(phone as string) && emailRegex.test(email as string) && username.length > 0) {
+      setIsLoading(true);
+      const form = new FormData();
+      const photo = {
+        uri: image as string,
+        type: 'image/jpeg',
+        name: 'name',
+      };
+      form.append('image', photo);
+      const body = {username: username, phone: phone, email: email};
+  
+        Object.keys(body).forEach((key) => {
+          form.append(key, body[key]);
+      });
+  
      
-    } catch (error) {
-      setIsLoading(false);
-      Alert.alert(`${error}`);
+      
+      try {
+          const response = await requestConfig("POST", userGlocal.token, 'have', `upload/update/${userGlocal._id}`, form, null,true)
+          if (response.status == 200) {
+            setWarring(false)
+            let user = response.data.user;
+            user.token = userGlocal.token;
+            const formatUser = await userWithout(user);
+            dispatch(changeUser(formatUser));
+            await AsyncStorage.setItem('user', JSON.stringify(formatUser));
+            setIsLoading(false);
+            setNotification('You have updated profile.');
+            setShowAnimatedToast(true);
+        }
+          
+       
+      } catch (error) {
+        setIsLoading(false);
+        Alert.alert(`${error}`);
+      }
+    } else {
+      setWarring(true);
+      setNotification('Please check information again.');
+      setShowAnimatedToast(true);
     }
+    
   };
 
   useEffect(() => {
@@ -188,7 +189,7 @@ export default function EditProfile() {
 
   return (
     <>
-   <AnimatedToast show={showAnimatedToast} onPress={() => setShowAnimatedToast(false)} text='You have updated profile.'/>
+   <AnimatedToast warring={warring} show={showAnimatedToast} onPress={() => setShowAnimatedToast(false)} text={notification}/>
     
     <GestureHandlerRootView style={{flex: 1, position: 'relative'}}>
       

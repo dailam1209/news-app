@@ -5,9 +5,7 @@ import {
   Image,
   TextInput,
   FlatList,
-  Alert,
 } from 'react-native';
-import axios from 'axios';
 import React, {useEffect, useState} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -16,22 +14,28 @@ import {FONTS, COLORS} from '../constants';
 import {images} from '../constants';
 import AcceptSVG from '../assets/misc/accepct-icon.svg';
 import {formatTime} from '../untils/formatDate';
-import {useAppDispatch, useAppSelector} from '../untils/useHooks';
+import {useAppDispatch, useAppSelector} from '../hooks/useHooks';
 import {fetchAllChats, fetchAllFriend} from '../reducer/User/userRedux';
 import {useSelector} from 'react-redux';
 import {checkHaveRoom} from '../reducer/User/userService';
-import {REACT_APP_API_URL} from '@env';
-import {isExpiresIn} from '../helpers/isExpried';
+
+
 
 const Chats: React.FC<{navigation: any}> = ({navigation}) => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.user.user);
   const friends = useSelector((state: any) => state.user.list.friend);
+  const copyFriend = friends;
+  const sortedDataFriend = copyFriend?.reduce((result, friend) => {
+    friend.isOnline ? result.unshift(friend) : result.push(friend);
+    return result;
+  }, []);
   const chats = useAppSelector((state: any) => state.user.list.chat);
-  const sortedChats = chats?.slice().sort((a: any, b: any) => b.createAt.localeCompare(a.createAt));
+  const sortedChats = chats
+    ?.slice()
+    .sort((a: any, b: any) => b?.createAt?.localeCompare(a.createAt));
 
   const isLoading = useAppSelector(state => state.user.isLoading);
-  const numberMessage = 0;
 
   const [search, setSearch] = useState('');
   const [filteredUser, setFilteredUsers] = useState([] as any);
@@ -49,24 +53,6 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
     }
   };
 
-  const onRoom = async (idRoom: string) => {
-    axios
-      .post(
-        `${REACT_APP_API_URL}/on-room/${idRoom}`,
-        {},
-        {
-          headers: {Authorization: `Bearer ${user?.token}`},
-        },
-      )
-      .then(response => {
-        if (response.status == 200) {
-          // Alert.alert('vao phong');
-        }
-      })
-      .catch(error => {
-        Alert.alert(`${error.message}`);
-      });
-  };
 
   const checkhaveRoomInDatabase = async (received, idOfUser, item) => {
     const idOfRoom = await checkHaveRoom(
@@ -79,7 +65,8 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
     );
     if (idOfRoom) {
       navigation.navigate('PersonalChat', {
-        userName: item.username,
+        username: item.username,
+        imageUser: item.image,
         reciever: item.id,
         roomId: idOfRoom,
         imageRecever: item.imageUser,
@@ -103,6 +90,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
   useEffect(() => {
     if (isFocused) {
       fetchData();
+    
     }
   }, [isFocused]);
 
@@ -110,8 +98,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
     <TouchableOpacity
       key={index}
       onPress={async () => {
-        await onRoom(item.roomId);
-        navigation.navigate('PersonalChat', item);
+        await navigation.navigate('PersonalChat', item);
       }}
       style={[
         {
@@ -182,9 +169,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
               alignItems: 'left',
               justifyContent: 'center',
             }}>
-            <Text style={{...FONTS.h4, marginBottom: 4}}>
-              {item.nameRoom}
-            </Text>
+            <Text style={{...FONTS.h4, marginBottom: 4}}>{item.nameRoom}</Text>
             <View
               style={{
                 flexDirection: 'row',
@@ -198,7 +183,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                     maxWidth: 210,
                     overflow: 'hidden',
                   },
-                  numberMessage > 0
+                  item.count > 0
                     ? {
                         color: COLORS.black,
                       }
@@ -208,7 +193,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 {user?.username?.localeCompare(item?.sender?.username) === 0 &&
                 item.sender.id === user._id
                   ? 'Bạn:'
-                  : `${item.sender.username}:`}{' '}
+                  : `${item?.sender?.username}:`}{' '}
                 {item.text !== '' && item.image === ''
                   ? item.text.length > 21
                     ? `${item.text.substring(0, 21)}...`
@@ -238,7 +223,14 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
           </View>
         </View>
         <View>
-          {item.count < 1 && <AcceptSVG width={10} height={60} backgroundColor={COLORS.secondaryGray} color={COLORS.secondaryGray}/>}
+          {item.count < 1 && (
+            <AcceptSVG
+              width={10}
+              height={60}
+              backgroundColor={COLORS.secondaryGray}
+              color={COLORS.secondaryGray}
+            />
+          )}
 
           {item.count !== 0 && item.sender.id !== user._id && (
             <Text
@@ -254,7 +246,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                 color: COLORS.secondaryWhite,
               }}>
               {' '}
-              {item.count > 5   ? '+5' : item.count}{' '}
+              {item.count > 5 ? '+5' : item.count}{' '}
             </Text>
           )}
         </View>
@@ -280,7 +272,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                   width: 'auto',
                   height: 30,
                   backgroundColor: COLORS.secondaryGray,
-                 
+
                   borderRadius: 8,
                   padding: 4,
                   elevation: 10,
@@ -335,7 +327,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
 
               <FlatList
                 horizontal={true}
-                data={friends}
+                data={sortedDataFriend}
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={item => item.id}
@@ -350,19 +342,20 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
                         alignItems: 'left',
                         justifyContent: 'center',
                       }}>
-                         <View
-                style={{
-                  height: 14,
-                  width: 14,
-                  borderRadius: 7,
-                  backgroundColor: COLORS.green,
-                  borderColor: COLORS.white,
-                  borderWidth: 2,
-                  position: 'absolute',
-                  bottom: '35%',
-                  right: 19.8,
-                  zIndex: 1000,
-                }}></View>
+                        { item.isOnline && <View
+                        style={{
+                          height: 14,
+                          width: 14,
+                          borderRadius: 7,
+                          backgroundColor: COLORS.green,
+                          borderColor: COLORS.white,
+                          borderWidth: 2,
+                          position: 'absolute',
+                          bottom: '35%',
+                          right: 19.8,
+                          zIndex: 1000,
+                        }}></View>}
+                      
                       <TouchableOpacity
                         onPress={() =>
                           checkhaveRoomInDatabase(item.id, user._id, item)

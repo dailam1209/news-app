@@ -1,17 +1,14 @@
-import {View, Text, TouchableOpacity, Image} from 'react-native';
-import React, { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import {View, Image} from 'react-native';
+import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {COLORS, FONTS} from '../constants';
 import {Chats, Contacts, More} from '../screens';
-import Home from '../components/Home';
+import Home from '../screens/Home';
 import {ListIconBottomNavigation} from '../constants/BottomNavigation';
-import ProfileUser from '../screens/ProfileUser';
-import EditProfile from '../screens/EditProfile';
 import Login from '../screens/Login';
-import { getLocalStorage } from '../untils/getLocalStorage';
-import { useIsFocused } from '@react-navigation/native';
-import { useAppSelector } from '../untils/useHooks';
+import {useIsFocused} from '@react-navigation/native';
+import {useAppSelector} from '../hooks/useHooks';
+import IconShare from '../common/IconShare';
 
 const Tab = createBottomTabNavigator();
 
@@ -54,7 +51,7 @@ const IconTab: React.FC<IconTabProps> = ({focused, url}) => {
   );
 };
 
-const BottomTabNavigation = ({ navigation }) => {
+const BottomTabNavigation = ({navigation}) => {
   const isFocused = useIsFocused();
   const user = useAppSelector(state => state.user?.user);
 
@@ -80,6 +77,12 @@ const BottomTabNavigation = ({ navigation }) => {
         name="Home"
         component={Home}
         options={{
+          headerShown: true,
+          title: 'VietNam News Online',
+          headerStyle: {
+            backgroundColor: 'yellow',
+          },
+          headerRight: () => <IconShare />,
           tabBarIcon: ({focused}: any) => {
             return (
               <IconTab
@@ -91,10 +94,10 @@ const BottomTabNavigation = ({ navigation }) => {
         }}
       />
       <Tab.Screen
-        name={"Contacts"}
+        name={'Contacts'}
         component={user ? Contacts : Login}
         options={{
-          title:  "Chats" ,
+          title: 'Chats',
           headerShown: false,
           tabBarIcon: ({focused}: any) => {
             return (
@@ -111,8 +114,8 @@ const BottomTabNavigation = ({ navigation }) => {
         name="Chats"
         component={user ? Chats : Login}
         options={{
-            headerShown: false,
-            headerTitleAlign: "center",
+          headerShown: false,
+          headerTitleAlign: 'center',
           tabBarIcon: ({focused}: any) => {
             return (
               <IconTab

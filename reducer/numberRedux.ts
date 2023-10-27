@@ -1,23 +1,23 @@
 import {createSlice} from '@reduxjs/toolkit';
 
 interface NumberState {
-  number: Number;
+  number: any;
 }
 
 const initialState: NumberState = {
-  number: 0,
+  number: {},
 };
 
 const numberSlice = createSlice({
   name: 'number',
   initialState,
   reducers: {
-    changeNumber(state, action) {
+    changeRoom(state, action) {
       state.number = action.payload;
     },
     
   },
 });
 
-export const {changeNumber } = numberSlice.actions;
+export const {changeRoom } = numberSlice.actions;
 export default numberSlice.reducer;

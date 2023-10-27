@@ -5,4 +5,5 @@ declare module "*.svg" {
     export default content;
   }
 
-declare module "@env"
+declare module "@env";
+declare module '@zegocloud/zego-uikit-prebuilt-call-rn';

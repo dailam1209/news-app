@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, StyleSheet, TouchableOpacity, Text, Image} from 'react-native';
-import { useAppSelector} from '../untils/useHooks';
+import { useAppSelector} from '../hooks/useHooks';
 import  Share  from 'react-native-share';
 
 const IconShare = () => {

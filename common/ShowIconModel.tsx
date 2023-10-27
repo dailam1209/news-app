@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, View, TouchableOpacity, Text, Image} from 'react-native';
-import {useAppDispatch} from '../untils/useHooks';
+import {useAppDispatch} from '../hooks/useHooks';
 import {changeNumber} from '../reducer/numberRedux';
 import {changeTongle} from '../reducer/tongleShareRedux';
 import {IconModal} from '../constants/IconModal';

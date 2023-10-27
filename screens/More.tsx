@@ -14,7 +14,7 @@ import {COLORS, FONTS, images } from '../constants';
 import RightSVG from '../assets/misc/right-icon.svg';
 import LogoutSVG from '../assets/misc/logout-icon.svg';
 import  {REACT_APP_API_URL}  from '@env'
-import { useAppDispatch, useAppSelector } from '../untils/useHooks';
+import { useAppDispatch, useAppSelector } from '../hooks/useHooks';
 import { changeUser } from '../reducer/User/userRedux';
 import { ModalModule } from '../common/Modal';
 

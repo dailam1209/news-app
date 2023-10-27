@@ -3,7 +3,7 @@ import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {NavigationContainer, DefaultTheme} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 
-import Home from '../components/Home';
+import Home from '../screens/Home';
 import Detail from '../components/Detail';
 import IconShare from '../common/IconShare';
 import BottomTabNavigation from './BottomNavigation';
@@ -16,6 +16,11 @@ import EditProfile from '../screens/EditProfile';
 import PersonalChat from '../screens/PersonalChat';
 import AddFriend from '../screens/AddFriend';
 import AddGroup from '../screens/AddGroup';
+import CallVideo from '../components/CallVideo/CallVideo';
+import {ZegoCallInvitationDialog} from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import {ZegoUIKitPrebuiltCallWaitingScreen} from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import {ZegoUIKitPrebuiltCallInCallScreen} from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import { Chats } from '../screens';
 
 const Stack = createStackNavigator();
 
@@ -41,36 +46,45 @@ const customTheme = {
 };
 
 function AppNavigator() {
-  const handleShareIcon = () => {
-    console.log('share');
-  };
+  const title = 'VietNam News Online';
 
   return (
-    <NavigationContainer theme={customTheme} >
+    <NavigationContainer theme={customTheme}>
+      <ZegoCallInvitationDialog />
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
             backgroundColor: 'yellow',
           },
-          headerRight: () => (
-            <IconShare />
-      ),
+          headerRight: () => <IconShare />,
         }}
         initialRouteName="BottomTabNavigation">
         <Stack.Screen
           name="Home"
           options={{
-            title: 'VietNam News Online',
+            title: title,
           }}
           component={Home}
         />
         <Stack.Screen
-          name= "BottomTabNavigation"
+          options={{headerShown: false}}
+          // DO NOT change the name
+          name="ZegoUIKitPrebuiltCallWaitingScreen"
+          component={ZegoUIKitPrebuiltCallWaitingScreen}
+        />
+        <Stack.Screen
+          options={{headerShown: false}}
+          // DO NOT change the name
+          name="ZegoUIKitPrebuiltCallInCallScreen"
+          component={ZegoUIKitPrebuiltCallInCallScreen}
+        />
+        <Stack.Screen
+          name="BottomTabNavigation"
           component={BottomTabNavigation}
           options={({route}: any) => ({
             headerLargeTitle: false,
-            headerShown: true,
-            title: 'VietNam News Online',
+            headerShown: false,
+            title: title,
           })}
         />
         <Stack.Screen
@@ -78,8 +92,7 @@ function AppNavigator() {
           component={Register}
           options={({route}: any) => ({
             headerLargeTitle: true,
-            
-            title: 'VietNam News Online',
+            title: title,
           })}
         />
         <Stack.Screen
@@ -87,7 +100,7 @@ function AppNavigator() {
           component={ForgotPassword}
           options={({route}: any) => ({
             headerLargeTitle: true,
-            title: 'VietNam News Online',
+            title: title,
           })}
         />
         <Stack.Screen
@@ -95,24 +108,13 @@ function AppNavigator() {
           component={ChangePass}
           options={({route}: any) => ({
             headerLargeTitle: true,
-            title: 'VietNam News Online',
-            headerRight: () => (
-                  <IconShare />
-            ),
+            title: title,
+            headerRight: () => <IconShare />,
           })}
         />
-        <Stack.Screen
-          name="ProfileUser"
-          component={ProfileUser}
-        />
-        <Stack.Screen
-          name="EditProfile"
-          component={EditProfile}
-        />
-        <Stack.Screen
-          name="AddGroup"
-          component={AddGroup}
-        />
+        <Stack.Screen name="ProfileUser" component={ProfileUser} />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
+        <Stack.Screen name="AddGroup" component={AddGroup} />
         <Stack.Screen
           name="PersonalChat"
           options={({route}: any) => ({
@@ -120,25 +122,35 @@ function AppNavigator() {
           })}
           component={PersonalChat}
         />
-        <Stack.Screen
-          name="AddFriend"
-          component={AddFriend}
-        />
-
+        <Stack.Screen name="AddFriend" component={AddFriend} />
         <Stack.Screen
           name="Detail"
           options={{
-            title: 'VietNam News Online',
+            title: title,
           }}
           component={Detail}
         />
         <Stack.Screen
           name="Login"
           options={{
-            title: 'VietNam News Online',
+            title: title,
           }}
           component={Login}
         />
+        <Stack.Screen
+          name="CallVideo"
+          options={{
+            title: title,
+          }}
+          component={CallVideo}
+        />
+        {/* <Stack.Screen
+          name="Chats"
+          options={{
+            title: title,
+          }}
+          component={Chats}
+        /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

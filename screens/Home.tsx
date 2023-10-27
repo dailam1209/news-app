@@ -1,19 +1,33 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {View, StyleSheet, ScrollView, FlatList} from 'react-native';
-import Iterm from './Iterm';
-import {useAppDispatch, useAppSelector} from '../untils/useHooks';
+// import Iterm from '../components/Iterm';
+import Iterm from '../components/Iterm'
+import {useAppDispatch, useAppSelector} from '../hooks/useHooks';
 import {changeUrl} from '../reducer/Url/urlRedux';
 import Loading from '../common/Loading';
 import {REACT_APP_API_URL} from '@env';
+import * as ZIM from 'zego-zim-react-native';
+import * as ZPNs from 'zego-zpns-react-native';
+import ZegoUIKitPrebuiltCallService from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import { requestConfig } from '../helpers/newApi';
+import { NavigationActions } from 'react-navigation';
+import axios from 'axios';
+// import  ZegoUIKitPrebuilt from '@zegocloud/zego-uikit-prebuilt';
+
+
+const appSign = "ba578a7aef466939f6d0fd86b8aa91a0205b562a91a333888fb80bc84eb5b142"
+const appId = 649896294;
 
 interface listProp {
   listNew: Array<any>;
 }
-function Home({navigation}: any) {
+const Home: React.FC<{navigation: any}> = ({navigation}) => {
   // handle url and change screen
   const dispatch = useAppDispatch();
+  const paramRoom = useAppSelector((state) => state.number.number)
   const listNew = useAppSelector(state => state.listNew.listNew);
   const user = useAppSelector(state => state.user.user);
+  const timeRef = useRef(0)
 
   const handleGoToDetail = (title: string) => {
     dispatch(changeUrl(title));
@@ -25,9 +39,61 @@ function Home({navigation}: any) {
     dispatch(changeUrl(`${REACT_APP_API_URL}`));
   };
 
+  // const TOKEN = ZegoUIKitPrebuilt.generateKitTokenForProduction(appId, "65cfe6854cb44be163a7d10b587c29ac",'', user._id, user.username);
+  // const zp = ZegoUIKitPrebuilt.create(TOKEN);
+  // zp.addPlugins({ ZIM });
+
+  // zp.setCallInvitationConfig({
+  //     enableNotifyWhenAppRunningInBackgroundOrQuit: true,
+  // })
+
   useEffect(() => {
     urlAgainToStart();
-  });
+    ZegoUIKitPrebuiltCallService.init(
+      appId,
+      appSign,
+      user?._id,
+      user?.username,
+      [ZIM, ZPNs],
+      {
+        ringtoneConfig: {
+          incomingCallFileName: 'zego_incoming.mp3',
+          outgoingCallFileName: 'zego_outgoing.mp3',
+        },
+        notifyWhenAppRunningInBackgroundOrQuit: true,
+        androidNotificationConfig: {
+          channelID: 'ZegoUIKit',
+          channelName: 'ZegoUIKit',
+        },
+        requireConfig: (data) => {
+          return {
+            onOnlySelfInRoom: () => { 
+            //   navigation.reset({
+            //   index: 0,
+            //   routes: [{ name: "PersonalChat",
+            //   params: paramRoom}]
+            // })
+            },
+              // onHangUp: () => { 
+            // navigation.reset({
+            //   index: 0,
+            //   routes: [{ name: "PersonalChat",
+            //   params: paramRoom}]
+            // })
+            // navigation.navigate("PersonalChat",  paramRoom)
+          //  },
+          durationConfig: {
+              isVisible: true,
+              onDurationUpdate: (duration) => {
+                // timeRef.current = duration
+              },
+          },
+          };
+      },
+      },
+    );
+   
+  }, []);
 
   return (
     <>
@@ -63,6 +129,7 @@ function Home({navigation}: any) {
             style={{
               marginLeft: 'auto',
               marginRight: 'auto',
+              marginBottom: 60
             }}
             data={listNew}
             renderItem={({item, index}) => (

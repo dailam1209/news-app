@@ -20,15 +20,19 @@ import UserCount = require('../assets/images/count-user-image.png');
 import { images }from '../constants';
 import {useDebounce} from '../hooks/useDebounce';
 import  {REACT_APP_API_URL}  from '@env';
-import { useAppSelector } from '../untils/useHooks';
+import { useAppSelector } from '../hooks/useHooks';
+import { requestConfig } from '../helpers/newApi';
+import { AnimatedToast } from '../common/AnimatedToast';
 
 const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
 
   
-  const [search, setSearch] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [ isMargin , setIsMargin ] = useState(true);
+  const [search, setSearch] = useState<String>('');
+  const [ showAnimatedToast, setShowAnimatedToast ] = useState<any>(false);
+  const [filteredUsers, setFilteredUsers] = useState([] as any);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [ isMargin , setIsMargin ] = useState<boolean>(true);
+  const [ count, setCount ] = useState<number>(0)
   const user = useAppSelector(state => state.user.user)
 
   const debounce = useDebounce(search.toLocaleLowerCase(), 500);
@@ -160,7 +164,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
 
         });
           setFilteredUsers(arrayChangeFriendAdd); 
-        Alert.alert('Send add friend successfully.')
+          setShowAnimatedToast(true);
       }
     } catch (error) {
       console.log(error);
@@ -190,12 +194,27 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
     }
   };
 
+  const getCountFriend = async () => {
+    const reponse = await requestConfig('GET', user.token, null, 'get-user', null, null, true );
+    if(reponse.status == 200) {
+      setCount(reponse.data.user.countFriendRequest)
+    }
+  }
+
+  const updateCount = async () => {
+    const reponse = await requestConfig('POST', user.token, null, 'update-count', null, null, true );
+    if(reponse.status == 200) {
+      setCount(0)
+    }
+  }
+
   useEffect(() => {
     setFilteredUsers([]);
     getData();
   }, [debounce]);
 
   useEffect(() => {
+    getCountFriend()
     Keyboard.addListener(
       'keyboardDidShow',
       () => {
@@ -212,6 +231,8 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
   }, []);
 
   return (
+    <>
+    <AnimatedToast warring={false} show={showAnimatedToast} onPress={() => setShowAnimatedToast(false)} text='Send add friend successfully.'/>
     <SafeAreaView style={{flex: 1}}>
       <PageContainer>
         <View style={{flex: 1}}>
@@ -224,8 +245,11 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
               marginTop: 22,
             }}>
             <Text style={{...FONTS.h2}}>Contacts</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AddFriend')}>
-              {true && (
+            <TouchableOpacity onPress={async () => {
+               navigation.navigate('AddFriend');
+               await updateCount()
+            }}>
+              {count > 0 &&  (
                 <View
                   style={{
                     height: 20,
@@ -248,7 +272,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
                       textAlign: 'center',
                       color: 'white',
                     }}>
-                    2
+                    {count}
                   </Text>
                 </View>
               )}
@@ -321,6 +345,7 @@ const Contacts: React.FC<{navigation: any}> = ({navigation}) => {
         </View>
       </PageContainer>
     </SafeAreaView>
+    </>
   );
 };
 

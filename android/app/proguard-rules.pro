@@ -9,3 +9,7 @@
 
 # Add any project specific keep options here:
 -dontwarn com.polidea.reactnativeble.**
+
+-keep class com.google.android.gms.common.** {*;}
+-keep class **.zego.**  { *; }
+-keep class **.**.zego_zpns.** { *; }

@@ -9,24 +9,24 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Alert,
+  ScrollView,
 } from 'react-native';
 import { RadioButton } from 'react-native-paper';
 import {COLORS, FONTS, images } from '../constants';
 import SearchSVG from '../assets/misc/search-icon.svg'
-import {useAppSelector} from '../untils/useHooks';
+import {useAppSelector} from '../hooks/useHooks';
 import { requestConfig } from '../helpers/newApi';
 import { createMessageApi } from '../reducer/User/userService';
 
 
-const AddGroup = () => {
+const AddGroup = ({ navigation }) => {
   const friends = useAppSelector(state => state.user.list.friend);
   const user = useAppSelector( (state) => state.user.user);
   const [search, setSearch] = useState<String>('');
   const [filteredUsers, setFilteredUsers] = useState(friends);
   const [isMargin, setIsMargin] = useState<Boolean>(true);
   const [selectedItems, setSelectedItems] = useState([] as any);
-  const [ nameGroup, setNameGroup ] = useState<String>();
+  const [ name, setName ] = useState<String>('');
 
   const isItemSelected = (itemId: string) => {
     return selectedItems.includes(itemId);
@@ -46,8 +46,9 @@ const AddGroup = () => {
     }
   };
 
-  const changeNameGroup = (value: any) => {
-    setNameGroup(value)
+  const changeNameGroup = (value) => {
+    console.log(value);
+    setName(value)
   }
 
   // Hàm xử lý khi radio button được chọn
@@ -101,7 +102,7 @@ const AddGroup = () => {
                   marginRight: 22,
                 }}>
                 <Image
-                  source={{ uri : user.image ? user.image : images.noneUser}}
+                  source={{ uri : item.image ? item.image : images.noneUser}}
                   resizeMode="contain"
                   style={{
                     height: 50,
@@ -137,22 +138,22 @@ const AddGroup = () => {
     );
   };
 
-  const submitCreateGroup = async () => {
+  const submitCreateGroup = async (nameGroup) => {
+    console.log('name', nameGroup);
     const data = {
       receverId: user._id,
       senderId:user._id,
       arrayIdAdd: selectedItems,
       typeRoom: "group",
-      name: nameGroup,
+      nameRoom: nameGroup,
     }
-    console.log("selectedItems", selectedItems.length);
-    if(selectedItems.length > 1 && nameGroup) {
-      const room = await requestConfig("POST", user?.token, null, "api/create-room", data, null, true)
-      await createMessageApi(user._id, user.id, room.data.id, 'group', user.token )
-    } else {
-      Alert.alert('Please choose more than 2 user or Enter group name');
+      const room = await requestConfig("POST", user?.token, null, "api/create-room", data, null, true);
+      const createMessage = await createMessageApi(user._id, user.id, room.data.id, 'group', user.token );
+      if(createMessage.status == 200) {
+        setSelectedItems([]);
+        navigation.navigate('Chats')
+      }
     }
-  };
 
   const handleCancel = () => {
     setSelectedItems([]);
@@ -177,6 +178,7 @@ const AddGroup = () => {
       height: '100%',
       marginTop: 10
     }}>
+      
       <View style={{
         width: '100%',
         alignItems: 'center',
@@ -189,8 +191,8 @@ const AddGroup = () => {
           marginBottom: 6},
           FONTS.body3
         ]}
-        value={nameGroup as string}
-        onChange={(value) => changeNameGroup(value)}
+        value={name}
+        onChangeText={changeNameGroup}
       />
       <View style={{
         position: 'absolute',
@@ -234,6 +236,7 @@ const AddGroup = () => {
         />
       </View>
       <View style={isMargin && styles.marginView}>
+      <ScrollView>
           <FlatList
             style={{
               marginBottom: 100,
@@ -242,12 +245,14 @@ const AddGroup = () => {
             renderItem={renderItem}
             keyExtractor={item => item.id.toString()}
           />
+        </ScrollView>
       </View>
-      {
-        filteredUsers.length > 0 &&
+      {/* {
+        name && selectedItems.length > 1 && */}
       <View style={{
         flexDirection: 'row',
         justifyContent: 'flex-end',
+        position: 'absolute',
         height: 100,
         bottom: 0,
         right: 0,
@@ -280,7 +285,7 @@ const AddGroup = () => {
           backgroundColor: COLORS.primary,
         }}
         onPress={() => {
-          submitCreateGroup();
+          submitCreateGroup(name);
         }}
         >
           <Text style={{
@@ -289,7 +294,7 @@ const AddGroup = () => {
           }}>Create</Text>
         </TouchableOpacity>
       </View>
-      }
+      {/* 5 */}
     </SafeAreaView>
   );
 };

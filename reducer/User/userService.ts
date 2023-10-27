@@ -92,7 +92,7 @@ export const createMessageApi = async (
     name: '',
     avatar: '',
   }
-  await axios
+  return await axios
     .post(
       `${REACT_APP_API_URL}/api/create-message/${receverId}`,
       {
@@ -122,12 +122,10 @@ export const createMessageApi = async (
       },
     )
     .then(response => {
-      if (response.status == 200) {
-        console.log(`create Module success`);
-      }
+      return response
     })
     .catch(error => {
-      console.log(`${error.message}`);
+      return error
     });
 };
 

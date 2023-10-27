@@ -10,6 +10,7 @@ import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
 import UserSVG from '../assets/misc/4092564_profile_about_mobile ui_user_icon.svg';
 import axios from 'axios';
+import { requestConfig } from '../helpers/newApi';
 
 interface RegisterProps {
   navigation: any;
@@ -64,28 +65,19 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
 
       const isEmail = emailOnblur();
       const isPassword = passwordOnblur();
+      const data = {
+        username: username,
+        email: email,
+        password: password
+      };
       if(isUser && isEmail && isPassword) {
-        const register = await axios({
-          method: 'post',
-          url: `${REACT_APP_API_URL}/register`,
-          headers: {
-          },
-          data: {
-            username: username,
-            email: email,
-            password: password
-          }
-        });
-        console.log(register.status);
-        if(register.data.success == true && register.status == 200) {
-          showToast(message);
-          setInterval(() => {
+        const register = await requestConfig("POST", '', null, "register", data, null, false);
+        if(register.status == 200) {
             navigation.navigate('Login'); 
-          }, [2000])
         }
       }
     } catch (error) {
-          showToast(error.message)
+        showToast(error.message)
     }
    
 

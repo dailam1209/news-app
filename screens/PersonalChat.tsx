@@ -7,9 +7,12 @@ import {
   Vibration,
   Alert,
   FlatList,
-  
+  Pressable,
+  ImageBackground,
+  ScrollView,
+  Keyboard,
 } from 'react-native';
-import React, {useEffect, useState, useCallback, useRef} from 'react';
+import React, {useEffect, useState, useCallback, useRef, useMemo} from 'react';
 import {REACT_APP_API_URL} from '@env';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {COLORS, FONTS} from '../constants';
@@ -25,108 +28,175 @@ import {
   Avatar,
 } from 'react-native-gifted-chat';
 import {socket} from '../config/config';
-import axios from 'axios';
 import {launchImageLibrary} from 'react-native-image-picker';
 // icon
 import LeftSVG from '../assets/misc/left-icon.svg';
 import SendSVG from '../assets/misc/send-icon.svg';
 import MenuSVG from '../assets/misc/menu-icon.svg';
+import CallSVG from '../assets/misc/call-icon.svg';
 import ImageSVG from '../assets/misc/image-icon.svg';
-import {useAppSelector} from '../untils/useHooks';
+import TongueSVG from '../assets/misc/emoji_emoticons_tongue_icon.svg';
+import LaughSVG from '../assets/misc/emoji_emoticon_happy_laugh_icon.svg';
+import CryingSVG from '../assets/misc/emoji_bad_cry_crying_disappointed_face_icon.svg';
+import DislikeSVG from '../assets/misc/emoji_angry_dislike_expression_social_icon.svg';
+import NoneSeenSVG from '../assets/misc/emoji_none_seen.svg';
+import {useAppDispatch, useAppSelector} from '../hooks/useHooks';
 import {requestConfig} from '../helpers/newApi';
-import { sendNotification } from '../helpers/sendNotification';
+import {sendNotification} from '../helpers/sendNotification';
+import {TouchableWithoutFeedback} from 'react-native';
+import {ZegoSendCallInvitationButton} from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import { changeRoom } from '../reducer/numberRedux';
+import { StackActions } from '@react-navigation/native';
+import { NavigationActions } from 'react-navigation';
+
 var FormData = require('form-data');
 
 interface PerrsonProps {
-  navigation: () => void;
+  navigation: any;
   route: any;
 }
 
 const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
-  const {username, reciever, imageRecever, roomId, fcmReciever,imageUser, isOnline, typeRoom} =
-    route.params;
-    console.log("route.params", route.params);
-  const user = useAppSelector((state) => state.user.user);
+  const paramRoom = useAppSelector((state) => state.number.number);
+  const params = route.params.roomId ? route.params : paramRoom;
+  const {username, reciever, roomId, imageUser, isOnline, typeRoom} = params;
+  const toCall = {username, reciever, roomId, imageUser, isOnline, typeRoom};
+  const icons = [
+    <TongueSVG width={16} height={16} />,
+    <LaughSVG width={16} height={16} />,
+    <CryingSVG width={16} height={16} />,
+    <DislikeSVG width={16} height={16} />,
+    <NoneSeenSVG width={16} height={16} />,
+  ];
+
+  const iconsCheck = [
+    <TongueSVG width={30} height={30} style={{margin: 2}} />,
+    <LaughSVG width={30} height={30} style={{margin: 2}} />,
+    <CryingSVG width={30} height={30} style={{margin: 2}} />,
+    <DislikeSVG width={30} height={30} style={{margin: 2}} />,
+    <NoneSeenSVG width={30} height={30} style={{margin: 2}} />,
+  ];
+  const user = useAppSelector(state => state.user.user);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [messages, setMessages] = useState([] as any);
-  const arrayListUser = []
-  const [listOffline, setListOffline ] = useState([] as any);
-  const limitMessage = 10;
-  const [ currentPage, setCurrentPage ] = useState(1);
-  const [ fetchIsLoading, setFetchIsLoading ] = useState(false);
- 
+  const [listOffline, setListOffline] = useState([] as any);
+  const [ users, setUsers] = useState<any>([])
+  const limitMessage = 15;
+  const [fetchIsLoading, setFetchIsLoading] = useState(true);
+  const [listIcon, setListIcon] = useState([]);
+  const [idMessage, setIdMessage] = useState<String>('');
+  const isFetchNextRef = useRef(false);
+  const dispatch = useAppDispatch();
+
+
   const [replyMsg, setReplyMsg] = React.useState({
     replyId: null,
     text: '',
     user: null,
+    image: '',
   });
-
 
   // api
 
+  const getAllUserOfRoom = async () => {
+    const users = await requestConfig("GET", user.token, null, `get-user-room/${roomId}`, null, null, true);
+    if(users.status == 200) {
+      setUsers(users.data.users)
+    }
+  };
+
+  const listUserOffline = async () => {
+    const listUserOfflineResponse = await requestConfig(
+      'POST',
+      user.token,
+      null,
+      `api/get-all-message/${roomId}`,
+      {fcmToken: user.fcmToken},
+      null,
+      true,
+    );
+    return listUserOfflineResponse.data.listOffline;
+
+    // setListOffline(() => listUserOfflineResponse.data.listOffline);
+  }
+
   const getAllChat = async () => {
+    setFetchIsLoading(true);
     try {
-      const promises = [
-        requestConfig("POST", user.token, null, `api/get-all-message/${roomId}`, { fcmToken: user.fcmToken }, null, true),
-        requestConfig("POST", user.token, null, `api/check-message/${roomId}?limit=${limitMessage}&nextPage=${currentPage}`, {}, null, true),
-      ];
-      // Use Promise.all to wait for all promises to resolve
-      const [listUserOffline, messagesRoom] = await Promise.all(promises);
-      console.log("listUserOffline", listUserOffline);
-  
-      setListOffline(listUserOffline.data.listOffline)
-  
-      if (Array.isArray(messagesRoom?.data?.messages)) {
-        const lastMessageConvert = messagesRoom.data.messages
-          .filter((message) => message.text !== '' || message.image !== '')
-          .reverse();
-  
-          console.log('lastMessageConvert',lastMessageConvert);
-        setMessages(lastMessageConvert);
+    //  await listUserOffline();
+
+      const messagesRoomResponse = await requestConfig(
+        'POST',
+        user.token,
+        null,
+        `api/check-message/${roomId}?limit=${limitMessage}&nextPage=${currentPage}`,
+        {},
+        null,
+        true,
+      );
+
+      if (Array.isArray(messagesRoomResponse?.data?.messages)) {
+        let page = Number(messagesRoomResponse.data.page);
+        setCurrentPage(page + 1);
+        const lastMessageConvert = messagesRoomResponse.data.messages.filter(
+          message => message.text !== '' || message.image !== '',
+        );
+        setMessages(previousMessages =>
+          GiftedChat.append(previousMessages, lastMessageConvert as any),
+        );
       } else {
         console.error('No messages found or invalid data structure.');
       }
     } catch (error) {
       console.error('Error in getAllChat:', error);
     }
+    setFetchIsLoading(false);
   };
-
-  const isLoadingMessage = async () => {
-    const oldMessage = await requestConfig("POST", user.token, null, `api/check-message/${roomId}?limit=${limit}&nextPage=${page}`, { fcmToken: user.fcmToken }, null, true);
-    if(oldMessage.data.messages && oldMessage.data.messages.length > 0) {
-      const lastMessageConvert = oldMessage.data.messages
-        .filter((message) => message.text !== '' || message.image !== '')
-        .reverse();
-    
-      setMessages(previousMessages =>
-        GiftedChat.append(previousMessages, lastMessageConvert as any),
-      );
-    } else {
-      setFetchIsLoading(true)
-    }
-  } 
 
   const submitMessageData = async (data: any) => {
     await requestConfig(
       'POST',
       user?.token,
       null,
-      `api/create-message/${reciever}`,
+      `api/create-message/${data.reciever}`,
       data,
       null,
       true,
     );
   };
 
+  const isLoadingMessage = async (limit: number, next: number) => {
+    const oldMessage = await requestConfig(
+      'POST',
+      user.token,
+      null,
+      `api/check-message/${roomId}?limit=${limit}&nextPage=${next}`,
+      {fcmToken: user.fcmToken},
+      null,
+      true,
+    );
+    if (oldMessage.data.messages.length > 0) {
+      let page = Number(oldMessage.data.page);
+      setCurrentPage(page + 1);
+
+      const lastMessageConvert = await oldMessage.data.messages.filter(
+        message => message.text !== '' || message.image !== '',
+      );
+      setMessages(previousMessages =>
+        GiftedChat.prepend(previousMessages, lastMessageConvert),
+      );
+    } else {
+      isFetchNextRef.current = true;
+    }
+    setFetchIsLoading(false);
+  };
+
   // end api
 
   // handle get return url in icloud to update in database and show it
   const getUrlWhenChooseImage = async (url: string) => {
-      // init property photo
-    
-
-      // const image = await requestConfig("POST", user?.token, null, 'api/image/get-url', form, null, true )
-
-      const form = new FormData();
+    // init property photo
+    const form = new FormData();
     const photo = {
       uri: url,
       type: 'image/jpeg',
@@ -134,27 +204,25 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
     };
     form.append('image', photo);
 
+    const image = await requestConfig(
+      'POST',
+      user?.token,
+      'have',
+      'api/image/get-url',
+      form,
+      null,
+      true,
+    );
 
-    const config = {
-      headers: {
-        Accpect: 'application/json',
-        'Content-type': 'multipart/form-data',
-        Authorization: `Bearer ${user.token}`,
-      },
-    };
-      const response = await axios.post(
-        `${REACT_APP_API_URL}/api/image/get-url`,
-        form,
-        config,
-      );
-      const data = await response.data;
-      if (response.status == 200) {
-        return data.image;
-      }
+    const data = await image.data;
+    if (image.status == 200) {
+      return data.image;
+    }
   };
 
   // handle picture
   const handlePhotoPicker = async () => {
+    const userOff =  await listUserOffline();
     let url: any = '';
     const result = await launchImageLibrary({
       mediaType: 'photo',
@@ -168,7 +236,6 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
       return;
     } else {
       const urlImage = await getUrlWhenChooseImage(result?.assets[0]?.uri);
-      console.log(urlImage);
       if (urlImage) {
         let imageMsg = [
           {
@@ -180,7 +247,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               name: user.username,
               avatar: user.image,
             },
-            image: urlImage ,
+            image: urlImage,
           },
         ];
         (imageMsg.user = {
@@ -188,20 +255,14 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           name: user.username,
           avatar: user.image,
         }),
-          
-
-
-        socket.emit('send_message', {
-          receverId: reciever,
-          roomId: roomId,
-          messages: imageMsg,
-        });
-        // setMessages(previousMessages =>
-        //   GiftedChat.append(previousMessages, imageMsg as any),
-        // );
+          socket.emit('send_message', {
+            receverId: reciever,
+            roomId: roomId,
+            messages: imageMsg,
+          });
         let message = {
           sender: user._id,
-          reciever: reciever,
+          reciever: reciever ? reciever : user._id,
           roomId: roomId,
           messages: [
             {
@@ -221,14 +282,14 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         let messageFCM = {
           messages: [
             {
-              text: "Đã gửi một hình ảnh.",
+              text: 'Đã gửi một hình ảnh.',
               user: imageMsg.user,
             },
           ],
         };
 
         await submitMessageData(message);
-        await sendNotification(listOffline, messageFCM.messages)
+        await sendNotification(userOff , messageFCM.messages);
       }
     }
   };
@@ -261,7 +322,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
 
   // show all message
   const BubbleComp = ({props}) => {
-    const {text, system} = props.currentMessage;
+    const {text, system, image, trashed, selecting} = props.currentMessage;
     const onLeftAction = useCallback(
       ({isActivated}) => {
         if (isActivated) {
@@ -269,7 +330,22 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           setReplyMsg({
             replyId: props.currentMessage._id,
             text,
-            user: username,
+            user: props.currentMessage.user.name,
+            image: image ? image : '',
+          });
+        }
+      },
+      [reciever],
+    );
+    const onRightAction = useCallback(
+      ({isActivated}) => {
+        if (isActivated) {
+          Vibration.vibrate(50);
+          setReplyMsg({
+            replyId: props.currentMessage._id,
+            text,
+            user: props.currentMessage.user.name,
+            image: image ? image : '',
           });
         }
       },
@@ -280,17 +356,18 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
       <SwipeRow
         useNativeDriver
         onLeftActionStatusChange={onLeftAction}
+        onRightActionStatusChange={onRightAction}
         disableLeftSwipe
         disableRightSwipe={
-          // !!(system || trashed || selecting)
-          system
+          !!(system || trashed || selecting)
+          // system
           // ||
           // props.currentMessage.user?.name === currentUser?.nickname ||
           // props.currentMessage.isReply ||
           // props.currentMessage?.audio ||
           // props.currentMessage?.image
         }
-        leftActivationValue={90}
+        leftActivationValue={20}
         leftActionValue={0}
         swipeKey={reciever + ''}>
         <></>
@@ -317,7 +394,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
       </SwipeRow>
     );
   };
-  
+
   // reply message
   const Reply = () => {
     return (
@@ -341,16 +418,26 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
             }}>
             {replyMsg?.user}
           </Text>
-          <Text
+          {replyMsg.text && (
+            <Text
+              style={{
+                color: '#034f84',
+                paddingLeft: 10,
+                paddingTop: 5,
+                marginBottom: 2,
+              }}>
+              {replyMsg.text}
+            </Text>
+          )}
+
+          <Image
+            source={{uri: replyMsg.image}}
             style={{
-              color: '#034f84',
-              paddingLeft: 10,
-              paddingTop: 5,
-              marginBottom: 2,
-            }}>
-            {replyMsg.text}
-          </Text>
-          <Image source={{uri: replyMsg.text }}/>
+              width: 40,
+              height: 40,
+              margin: 4,
+            }}
+          />
         </View>
         <View
           style={{
@@ -362,7 +449,9 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
             top: 0,
           }}>
           <TouchableOpacity
-            onPress={() => setReplyMsg({replyId: null, text: '', user: null})}>
+            onPress={() =>
+              setReplyMsg({replyId: null, text: '', user: null, image: ''})
+            }>
             <Text>X</Text>
           </TouchableOpacity>
         </View>
@@ -474,41 +563,55 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   const CustomMessageText = props => {
     return (
       <>
-        <View style={{padding: 4}}>
-          <View style={{backgroundColor: '#005CB5', borderRadius: 10}}>
-            <View style={{flexDirection: 'row'}}>
-              <View
-                style={{
-                  height: '100%',
-                  width: 10,
-                  backgroundColor: '#00468A',
-                  borderTopLeftRadius: 15,
-                  borderBottomLeftRadius: 15,
-                }}
-              />
-              <View style={{flexDirection: 'column'}}>
-                <Text
+        {props.currentMessage?.isReply.user && (
+          <View style={{padding: 4}}>
+            <View style={{backgroundColor: '#005CB5', borderRadius: 10}}>
+              <View style={{flexDirection: 'row'}}>
+                <View
                   style={{
-                    color: 'white',
-                    paddingHorizontal: 10,
-                    paddingTop: 1,
-                    fontWeight: '700',
-                  }}>
-                  {props.currentMessage?.isReply?.user}
-                </Text>
-                <Text
-                  style={{
-                    color: 'white',
-                    paddingHorizontal: 10,
-                    paddingTop: 5,
-                    marginBottom: 5,
-                  }}>
-                  {props.currentMessage?.isReply?.text}
-                </Text>
+                    height: '100%',
+                    width: 10,
+                    backgroundColor: '#00468A',
+                    borderTopLeftRadius: 15,
+                    borderBottomLeftRadius: 15,
+                  }}
+                />
+                <View style={{flexDirection: 'column'}}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      paddingHorizontal: 10,
+                      paddingTop: 1,
+                      fontWeight: '700',
+                    }}>
+                    {props.currentMessage?.isReply?.user}
+                  </Text>
+                  {props.currentMessage?.isReply?.text && (
+                    <Text
+                      style={{
+                        color: 'white',
+                        paddingHorizontal: 10,
+                        paddingTop: 5,
+                        marginBottom: 5,
+                      }}>
+                      {props.currentMessage?.isReply?.text}
+                    </Text>
+                  )}
+
+                  <Image
+                    source={{uri: props.currentMessage.isReply.image}}
+                    style={{
+                      width: props.currentMessage?.isReply.image ? 100 : 0,
+                      height: props.currentMessage?.isReply.image ? 60 : 0,
+                      marginLeft: props.currentMessage?.isReply.image ? 2 : 0,
+                      marginBottom: props.currentMessage?.isReply.image ? 4 : 0,
+                    }}
+                  />
+                </View>
               </View>
             </View>
           </View>
-        </View>
+        )}
 
         <MessageText
           customTextStyle={{
@@ -524,22 +627,41 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
 
   // custom view text
   const renderMessageText = props => {
-    if (props.currentMessage.isReply?.text) {
-      return <CustomMessageText {...props} />;
-    }
     return (
-        <MessageText style={{
-          marginBottom: 0,
-          marginTop: 0
-        }} {...props} />
-        
+      <Pressable
+        onLongPress={() => {
+          console.log('click', props.currentMessage._id);
+          setIdMessage(props.currentMessage._id);
+        }}
+        onPressOut={() => setIdMessage('')}>
+        <CustomMessageText {...props} />
+      </Pressable>
     );
-   
+    // if (props.currentMessage.isReply.user) {
+    //   return <CustomMessageText {...props} />;
+    // } else {
+    //   return (
+    //     <Pressable onPress={() => setIdMessage(props.currentMessage._id)}
+    //     onPressOut={() => setIdMessage('')}
+    //     >
+
+    //       <MessageText
+    //         style={{
+    //           marginBottom: 0,
+    //           marginTop: 0,
+    //         }}
+    //         {...props}
+    //       />
+    //     </Pressable>
+    //   );
+    // }
   };
 
   // send message with socket and save in database
   const onSendMessage = async (messages = []) => {
     const {_id, createdAt, text, user} = messages[0];
+    const userOff =  await listUserOffline();
+    console.log("userOff", userOff);
     const newMessage = [
       {
         _id: _id,
@@ -549,23 +671,20 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         sent: true,
         received: reciever,
         seen: false,
-        isReply: replyMsg.text !== '' ? replyMsg : {}
+        isReply: replyMsg.text || replyMsg.image ? replyMsg : {},
       },
     ];
-    
-    if (text.trim() !== '') {
+
+    if (text !== '') {
       socket.emit('send_message', {
         receverId: reciever,
         roomId: roomId,
         messages: newMessage,
       });
-      // setMessages((previousMessages: any) =>
-      //   GiftedChat.append(previousMessages, newMessage),
-      // );
-      
+
       const message = {
         sender: user._id,
-        reciever: reciever,
+        reciever: reciever ? reciever : user._id,
         roomId: roomId,
         createAt: createdAt,
         messages: [
@@ -587,21 +706,21 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           },
         ],
       };
+      
       const promises = [submitMessageData(message)];
-      if (listOffline.length > 0) {
-        promises.push(sendNotification(listOffline, message.messages));
+      if (userOff) {
+        promises.push(sendNotification(userOff, message.messages));
       }
 
       Promise.all(promises)
-        .then(results => {
-        })
-        .catch(error => {
-        });
+        .then(results => {})
+        .catch(error => {});
 
       setReplyMsg({
         replyId: null,
         text: '',
         user: null,
+        image: '',
       });
     }
   };
@@ -609,77 +728,167 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   const renderTicks = currentMessage => {
     // const tickedUser =  currentMessage[0].user._id
     return (
+      // <View
+      //   style={[{
+      //     position: 'absolute',
+      //     top: 16.2,
+      //     right: -14,
+      //     width: 30,
+      //     height: 20,
+      //   },
+      //   currentMessage.user._id !== user._id && styles.stickitLeft
+      // ]}>
+      //   {!!currentMessage.sent && !!currentMessage.received && (
+      //     <Text style={{fontSize: 9,color: COLORS.gray, paddingRight: 10}}></Text>
+      //   )}
+      // </View>
       <View
-        style={[{
-          position: 'absolute',
-          top: 16.2,
-          right: -14,
-          width: 30, 
-          height: 20,
-        },
-        currentMessage.user._id !== user._id && styles.stickitLeft
-      ]}> 
-        {!!currentMessage.sent && !!currentMessage.received && (
-          <Text style={{fontSize: 9,color: COLORS.gray, paddingRight: 10}}></Text>
+        style={[
+          {
+            position: 'absolute',
+            top: 13,
+            left: -4,
+            flex: 1,
+            minWidth: 18,
+            height: 18,
+          },
+          currentMessage.user._id !== user._id && styles.stickitLeft,
+        ]}>
+        {currentMessage._id == idMessage && (
+          <View
+            style={{
+              zIndex: 1000000000000,
+              flexDirection: 'row',
+              backgroundColor: COLORS.secondaryWhite,
+              width: 'auto',
+              height: 40,
+              bottom: 64,
+              left: -180,
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              elevation: 4,
+              borderRadius: 10,
+              padding: 10,
+            }}>
+            <FlatList
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                width: 'auto',
+                height: 40,
+              }}
+              data={iconsCheck}
+              renderItem={({item, index}) => (
+                <TouchableOpacity
+                  onPress={() => {
+                    // if(listIcon.includes(icons) !== -1) {
+                    setListIcon(pre => [...pre, item]);
+                    // }
+                  }}>
+                  <View
+                    style={{
+                      margin: 3.5,
+                    }}>
+                    {item}
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+            <View style={styles.triangle}></View>
+          </View>
         )}
+        <TouchableWithoutFeedback
+          style={{
+            position: 'absolute',
+            width: 20,
+            height: 16,
+          }}
+          onPress={() => {
+            // setIdMessage('');
+            // setIdMessage(currentMessage._id);
+          }}>
+          <FlatList
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-start',
+              width: 60,
+              height: 18,
+            }}
+            data={listIcon}
+            renderItem={({item, index}) => (
+              <View
+                style={[
+                  styles.iconContainer,
+                  index > 0 ? styles.iconOverlap : null,
+                ]}>
+                {item}
+              </View>
+            )}
+          />
+        </TouchableWithoutFeedback>
       </View>
     );
   };
   function renderAvatar(props) {
-    return (
-      <>
-      { typeRoom &&
-      <Avatar
-        {...props}
-      />
-      }
-      </>
-    );
+    return <>{typeRoom !== '' && <Avatar {...props} />}</>;
   }
 
-  function renderScrollToBottomWrapper () {
+  function renderScrollToBottomWrapper() {
     const scrollToBottomComponent = (
-      <View style={{
-        opacity: 0.8,
-        position: 'absolute',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        right: 10,
-        bottom: 30,
-        zIndex: 999,
-        height: 40,
-        width: 40,
-        borderRadius: 20,
-        backgroundColor: 'red',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: 'black',
-        shadowOpacity: 0.5,
-        shadowOffset: { width: 0, height: 0 },
-        shadowRadius: 1,
-      }}>
-        <TouchableOpacity onPress={this.scrollToBottom} hitSlop={{ top: 5, left: 5, right: 5, bottom: 5 }}>
+      <View
+        style={{
+          opacity: 0.8,
+          position: 'absolute',
+          paddingHorizontal: 15,
+          paddingVertical: 8,
+          right: 10,
+          bottom: 30,
+          zIndex: 999,
+          height: 40,
+          width: 40,
+          borderRadius: 20,
+          backgroundColor: 'red',
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: 'black',
+          shadowOpacity: 0.5,
+          shadowOffset: {width: 0, height: 0},
+          shadowRadius: 1,
+        }}>
+        <TouchableOpacity
+          onPress={this.scrollToBottom}
+          hitSlop={{top: 5, left: 5, right: 5, bottom: 5}}>
           <Text>V</Text>
         </TouchableOpacity>
       </View>
     );
-  
+
     if (this.props.scrollToBottomComponent) {
       return (
-        <TouchableOpacity onPress={this.scrollToBottom} hitSlop={{ top: 5, left: 5, right: 5, bottom: 5 }}>
+        <TouchableOpacity
+          onPress={this.scrollToBottom}
+          hitSlop={{top: 5, left: 5, right: 5, bottom: 5}}>
           {this.props.scrollToBottomComponent}
         </TouchableOpacity>
       );
     }
     return scrollToBottomComponent;
   }
-  const isCloseToTop = ({ layoutMeasurement, contentOffset, contentSize }) => {
+  const isCloseToTop = ({layoutMeasurement, contentOffset, contentSize}) => {
     const paddingToTop = 80;
-    return contentSize.height - layoutMeasurement.height - paddingToTop <= contentOffset.y;
-  }  
+    return (
+      contentSize.height - layoutMeasurement.height - paddingToTop <=
+      contentOffset.y
+    );
+  };
 
   useEffect(() => {
     (async () => {
+      if(route.params.roomId) {
+        dispatch(changeRoom(route.params));
+      } else {
+        dispatch(changeRoom(paramRoom));
+      }
       await getAllChat();
       // connect socket io
       socket.connect();
@@ -694,8 +903,8 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           text: data.messages[0].text,
           createdAt: data.messages[0].createdAt,
           user: data.messages[0].user,
-          image: data.messages[0].image && data.messages[0].image ,
-          isReply: data.messages[0]?.isReply
+          image: data.messages[0].image && data.messages[0].image,
+          isReply: data.messages[0]?.isReply,
         };
         setMessages((previousMessages: any) =>
           GiftedChat.append(
@@ -704,150 +913,197 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           ),
         );
       });
+      await getAllUserOfRoom();
     })();
-  }, []);
+  }, [roomId]);
 
   return (
     <>
       <SafeAreaView style={styles.container}>
-        <StatusBar style="light" backgroundColor={COLORS.white} />
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            paddingHorizontal: 16,
-            backgroundColor: COLORS.white,
-            height: 60,
-          }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TouchableOpacity
-              onPress={ async() => {
-                socket.emit('leave_room', {
-                  username: user.username,
-                  room: roomId,
-                });
-                navigation.goBack();
-                await requestConfig("POST", user.token, '', `api/left-room/${roomId}`, {
-                  fcmToken: user.fcmToken
-                }, null, true)
+        {/* <StatusBar style="light" backgroundColor={COLORS.yellow} /> */}
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 
-              }}>
-              <LeftSVG width={20} height={18} />
-            </TouchableOpacity>
+        <View style={{
+          flex: 1
+        }}>
+
+          <View style={{ overflow: 'hidden', paddingBottom: 3 }}>
+
             <View
               style={{
                 flexDirection: 'row',
-                alignItems: 'center',
-                marginLeft: 14,
-                borderRadius: '2px',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                backgroundColor: COLORS.white,
+                height: 60,
+                elevation: 3,
               }}>
-              <Image
-                source={
-                  imageUser
-                    ? {uri: imageUser}
-                    : {
-                        uri: 'https://hope.be/wp-content/uploads/2015/05/no-user-image.gif',
-                      }
-                  // UserImage
-                }
-                resizeMode="contain"
+              <View
                 style={{
-                  height: 40,
-                  width: 40,
-                  borderRadius: 20,
-                  borderWidth: 2,
-                  borderColor: '#ccc',
-                }}
-              />
-              <View>
-                <Text style={{...FONTS.h4, marginLeft: 8}}>{username}</Text>
-                <View>
-                  <View
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}>
+                <TouchableOpacity
+                  onPress={async () => {
+                    socket.emit('leave_room', {
+                      username: user.username,
+                      room: roomId,
+                    });
+                    navigation.navigate('BottomTabNavigation', { screen: 'Chats', initial: false, });
+                    await requestConfig(
+                      'POST',
+                      user.token,
+                      '',
+                      `api/left-room/${roomId}`,
+                      {
+                        fcmToken: user.fcmToken,
+                      },
+                      null,
+                      true,
+                    );
+                  }}>
+                  <LeftSVG width={20} height={18} />
+                </TouchableOpacity>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginLeft: 14,
+                    borderRadius: '2px',
+                  }}>
+                  <Image
+                    source={
+                      imageUser
+                        ? {uri: imageUser}
+                        : {
+                            uri: 'https://hope.be/wp-content/uploads/2015/05/no-user-image.gif',
+                          }
+                      // UserImage
+                    }
+                    resizeMode="contain"
                     style={{
-                      width: 6,
-                      height: 6,
-                      backgroundColor: isOnline ? COLORS.green : COLORS.gray,
-                      top: '52%',
-                      marginLeft: 6,
-                      marginRight: 4,
-                      borderRadius: 3,
-                    }}></View>
-                  <Text style={{...FONTS.h5, marginLeft: 16}}>
-                    {isOnline ? 'Online' : 'Offline'}
-                  </Text>
+                      height: 40,
+                      width: 40,
+                      borderRadius: 20,
+                      borderWidth: 2,
+                      borderColor: '#ccc',
+                    }}
+                  />
+                  <View>
+                    <Text style={{...FONTS.h4, marginLeft: 8}}>{username}</Text>
+                    <View>
+                      <View
+                        style={{
+                          width: 6,
+                          height: 6,
+                          backgroundColor: isOnline ? COLORS.green : COLORS.gray,
+                          top: '52%',
+                          marginLeft: 6,
+                          marginRight: 4,
+                          borderRadius: 3,
+                        }}></View>
+                      <Text style={{...FONTS.h5, marginLeft: 16}}>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  zIndex: 100,
+                }}>
+                {/* <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate('CallVideo', toCall);
+                  }}
+                  style={{
+                    marginRight: 10,
+                  }}>
+                  <CallSVG width={24} height={30} color={COLORS.primary} />
+                </TouchableOpacity> */}
+
+                <View>
+                  <ZegoSendCallInvitationButton
+                    invitees={users.map((inviteeID) => {
+                      return { userID: inviteeID._id, userName: 'user_' + inviteeID.username };
+                    })} 
+                    isVideoCall={false}
+                    resourceID={'zegouikit_call'} // For offline call notification
+                  />
+                </View>
+                <View
+                  style={{
+                    marginLeft: 16,
+                  }}>
+                  <ZegoSendCallInvitationButton
+                  invitees={users.map((inviteeID) => {
+                    return { userID: inviteeID._id, userName: 'user_' + inviteeID.username };
+                  })} 
+                    isVideoCall={true}
+                    resourceID={'zegouikit_call'} // For offline call notification
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => {}}
+                  style={{
+                    marginLeft: 10,
+                  }}>
+                  <MenuSVG width={24} height={30} color={COLORS.primary} />
+                </TouchableOpacity>
               </View>
             </View>
           </View>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TouchableOpacity
-              onPress={() => console.log('search')}
+          <View style={{flex: 1, backgroundColor: '#fff'}}>
+            <GiftedChat
+              messages={messages}
+              onSend={messages => onSendMessage(messages as any)}
+              user={{
+                _id: user._id,
+                name: user.username,
+                avatar: user.image,
+              }}
+              renderBubble={renderBubble}
+              renderInputToolbar={renderInputToolbar}
+              alwaysShowSend
+              showAvatarForEveryMessage={true}
+              // show avatar
+              shouldUpdateMessage={() => (typeRoom ? false : true)}
+              renderAvatar={renderAvatar}
+              renderSend={renderSend}
+              renderMessageText={renderMessageText}
+              renderTicks={renderTicks}
+              infiniteScroll
+              scrollToBottom={true}
+              scrollToBottomOffset={500}
+              scrollToBottomComponent={renderScrollToBottomWrapper}
+              loadEarlier={fetchIsLoading}
+              // isKeyboardInternallyHandled={false}
+              listViewProps={{
+                scrollEventThrottle: 400,
+                onScroll: async ({nativeEvent}) => {
+                  if (isCloseToTop(nativeEvent)) {
+                    setFetchIsLoading(true);
+                    if (!fetchIsLoading && isFetchNextRef.current == false) {
+                      await isLoadingMessage(limitMessage, currentPage);
+                    }
+                  }
+                },
+              }}
+            />
+            <View
               style={{
-                marginRight: 8,
-              }}></TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => console.log('Menu')}
-              style={{
-                marginRight: 8,
-              }}>
-              <MenuSVG width={24} height={30} color={COLORS.black} />
-            </TouchableOpacity>
+                height: '1%',
+                width: '100%',
+              }}
+            />
           </View>
         </View>
-
-        <View style={{flex: 1, backgroundColor: '#fff'}}>
-          <GiftedChat
-            messages={messages}
-            onSend={messages => onSendMessage(messages as any)}
-            user={{
-              _id: user._id,
-              name: user.username,
-              avatar: user.image,
-            }}
-            renderBubble={renderBubble}
-            renderInputToolbar={renderInputToolbar}
-            alwaysShowSend
-            showAvatarForEveryMessage={true}
-            // show avatar
-            shouldUpdateMessage={() => typeRoom ? false : true}
-            renderAvatar={renderAvatar}
-            renderSend={renderSend}
-            renderMessageText={renderMessageText}
-            renderTicks={renderTicks}
-            infiniteScroll
-            scrollToBottom={true}
-            scrollToBottomOffset={500}
-            scrollToBottomComponent={renderScrollToBottomWrapper}
-            loadEarlier={true}
-            isKeyboardInternallyHandled={false}
-            listViewProps={{
-              scrollEventThrottle: 400,
-              onScroll: async ({ nativeEvent }) => {
-                if (isCloseToTop(nativeEvent)) {
-                  if(!fetchIsLoading ) {
-                    setCurrentPage(() => currentPage + 1)
-                    await isLoadingMessage()
-                  }
-                }
-              }
-            }}
-          />
-          <View
-            style={{
-              height: '1%',
-              width: '100%',
-            }}
-          />
-        </View>
+        </TouchableWithoutFeedback>
       </SafeAreaView>
     </>
   );
@@ -867,7 +1123,29 @@ const styles = StyleSheet.create({
   },
   stickitLeft: {
     left: -2,
-  }
+  },
+  iconContainer: {
+    alignItems: 'center',
+    alignContent: 'center',
+  },
+  iconOverlap: {
+    marginLeft: -8, // Overlap each icon by 50%
+  },
+  triangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderTopWidth: 10,
+    borderStyle: 'solid',
+    backgroundColor: 'transparent',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: COLORS.secondaryWhite,
+    position: 'absolute',
+    top: 40,
+    right: 12,
+  },
 });
 
 export default PersonalChat;

@@ -22,12 +22,17 @@ export const requestConfig = async (
       const refresh = await getRefreshToken();
       newToken = await refreshToken(refresh);
     } 
+    const headers = {
+      Authorization: `Bearer ${newToken ? newToken : ''}`,
+    };
+    
+    if (header == 'have') {
+      headers['Accept'] = 'application/json';
+      headers['Content-type'] = 'multipart/form-data';
+    }
       return await axios
         .request({
-          headers: {
-            Authorization: `Bearer ${newToken ? newToken : ''}`,
-            ...header,
-          },
+          headers,
           method: method,
           url: `${REACT_APP_API_URL}/${url}`,
           data: data,

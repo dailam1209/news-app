@@ -1,7 +1,7 @@
 import React from 'react';
 import {Text, View, StyleSheet, Button} from 'react-native';
 import {WebView} from 'react-native-webview';
-import {useAppSelector, useAppDispatch} from '../untils/useHooks';
+import {useAppSelector, useAppDispatch} from '../hooks/useHooks';
 import {changeUrl} from '../reducer/Url/urlRedux';
 
 const Detail = () => {

@@ -44,7 +44,10 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({navigation}) => {
     );
 
     if (reponse.status == 200) {
-      navigation.navigate('ChangePass');
+      navigation.navigate('ChangePass', {
+        email
+      }
+      );
     } else {
       setShowToast(true)
     }

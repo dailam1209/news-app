@@ -10,7 +10,7 @@ import RequestFriend from './RequestFriend';
 import SentFriend from './SentFriend';
 import CustomSwitch from '../components/CustomSwitch';
 import Loading from '../common/Loading';
-import { useAppSelector } from '../untils/useHooks';
+import { useAppSelector } from '../hooks/useHooks';
 import { requestConfig } from '../helpers/newApi';
 
 const AddFriend = () => {

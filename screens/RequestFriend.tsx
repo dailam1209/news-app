@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from 'react';
-import axios from 'axios';
 import {
   SafeAreaView,
   View,
@@ -10,11 +9,11 @@ import {
   Animated,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import {COLORS, FONTS} from '../constants';
-import UserImage = require('../assets/images/user-image.png');
-import  {REACT_APP_API_URL}  from '@env'
+import {COLORS, FONTS, images} from '../constants';
+import { AnimatedToast } from '../common/AnimatedToast';
+import { formatDate } from '../untils/formatDate';
+import { requestConfig } from '../helpers/newApi';
 
 export interface RequestFriendProps {
   listUser: any;
@@ -23,28 +22,17 @@ export interface RequestFriendProps {
 
 const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
   const [filteredUsers, setFilteredUsers] = useState<any>(listUser);
+  const [ showAnimatedToast, setShowAnimatedToast ] = useState<any>(false);
 
   const acceptAddFriend = async (id: string) => {
-    await axios({
-      method: 'post',
-      url: `${REACT_APP_API_URL}/accept-friend/${id}`,
-      headers: {Authorization: `Bearer ${token}`},
-    })
-      .then(function (response) {
-        if (response.status == 200) {
-          const newData = filteredUsers.filter((item) => item._id !== id);
-          setFilteredUsers(newData); 
-          Alert.alert(`Đã thêm bạn mới thành công.`);
-        }
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    const add = await requestConfig("POST", token, null, `accept-friend/${id}`,null, null, true);
+    if (add.status == 200) {
+      const newData = filteredUsers.filter((item) => item._id !== id);
+      setFilteredUsers(newData); 
+      setShowAnimatedToast(true)
+    }
   };
 
-  useEffect(() => {
-    console.log(listUser);
-  }, [listUser]);
 
   const renderItem = ({item, index}: any) => (
     <View
@@ -79,11 +67,11 @@ const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
               marginRight: 10,
             }}>
             <Image
-              source={
-                item.image !== '' && item.image !== undefined
-                  ? {uri: `${item.image}`}
-                  : UserImage
-              }
+              source={{
+                uri: item.image !== '' && item.image !== undefined
+                ? item.image
+                : images.noneUser
+              }}
               resizeMode="contain"
               style={{
                 height: 50,
@@ -167,6 +155,8 @@ const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
   );
 
   return (
+    <>
+     <AnimatedToast warring={false} show={showAnimatedToast} onPress={() => setShowAnimatedToast(false)} text='Đã thêm bạn mới thành công.'/>
     <SafeAreaView style={{flex: 1}}>
         <View
           style={{
@@ -179,31 +169,9 @@ const RequestFriend: React.FC<RequestFriendProps> = ({listUser, token}) => {
           />
         </View>
     </SafeAreaView>
+    </>
   );
 };
 
 export default RequestFriend;
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    height: 60,
-    margin: 20,
-    borderRadius: 10,
-  },
-  touch: {
-    flex: 1,
-    backgroundColor: '#3968d4',
-    alignItems: 'center',
-    margin: 10,
-    height: '100%',
-    borderRadius: 10,
-  },
-  button: {
-    textAlign: 'center',
-    height: 60,
-    lineHeight: 60,
-    fontSize: 16,
-    color: COLORS.white,
-  },
-});

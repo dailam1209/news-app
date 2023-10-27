@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {Alert, Modal, StyleSheet, View, TouchableOpacity} from 'react-native';
 import {ShowIconModel} from './ShowIconModel';
-import {useAppDispatch, useAppSelector} from '../untils/useHooks';
+import {useAppDispatch, useAppSelector} from '../hooks/useHooks';
 import {changeTongle} from '../reducer/tongleShareRedux';
 import {Face} from '../components/Facebook/Face';
 import BluePLR from '../components/Bluetooth/Blue';

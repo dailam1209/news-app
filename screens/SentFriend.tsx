@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {COLORS, FONTS, images} from '../constants';
 import {formatDate} from '../untils/formatDate';
-import  {REACT_APP_API_URL}  from '@env'
+import { requestConfig } from '../helpers/newApi';
 
 export interface SentFriendProps {
   listUser: any,
@@ -21,18 +21,13 @@ export interface SentFriendProps {
 const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
   const [filteredUsers, setFilteredUsers] = useState<any>(listUser);
 
+
   const deleteSentFriend = async (id: string) => {
-    await axios({
-      method: 'put',
-      url: `${REACT_APP_API_URL}/remove-friend-all/${id}`,
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(function (response) {
-        if(response.status == 200) {
-          const newData = filteredUsers.filter((item) => item._id !== id);
-          setFilteredUsers(newData); 
-        }
-      });
+    const sent = await requestConfig("PUT", token, null, `remove-friend-all/${id}`,null, null, true);
+    if(sent.status == 200) {
+      const newData = filteredUsers.filter((item) => item._id !== id);
+      setFilteredUsers(newData); 
+    }
   }
 
   const renderItem = ({item, index}: any) => (
@@ -140,27 +135,3 @@ const SentFriend: React.FC<SentFriendProps> = ({listUser, token}) => {
 };
 
 export default SentFriend;
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    height: 60,
-    margin: 20,
-    borderRadius: 10,
-  },
-  touch: {
-    flex: 1,
-    backgroundColor: '#3968d4',
-    alignItems: 'center',
-    margin: 10,
-    height: '100%',
-    borderRadius: 10,
-  },
-  button: {
-    textAlign: 'center',
-    height: 60,
-    lineHeight: 60,
-    fontSize: 16,
-    color: COLORS.white,
-  },
-});

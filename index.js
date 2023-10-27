@@ -6,6 +6,12 @@ import { Provider } from 'react-redux';
 import { store, persistor } from './reducer/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import messaging from '@react-native-firebase/messaging';
+import ZegoUIKitPrebuiltCallService from '@zegocloud/zego-uikit-prebuilt-call-rn';
+import * as ZIM from 'zego-zim-react-native';
+import * as ZPNs from 'zego-zpns-react-native';
+
+
+ZegoUIKitPrebuiltCallService.useSystemCallingUI([ZIM, ZPNs]);
 
 messaging().setBackgroundMessageHandler( async message => {
     console.log(message);

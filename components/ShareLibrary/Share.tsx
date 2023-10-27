@@ -1,7 +1,7 @@
 // import React, { useEffect } from 'react';
 // import {Alert,  View, Button, StyleSheet} from 'react-native';
 // import  Share  from 'react-native-share';
-// import { useAppSelector } from '../../untils/useHooks';
+// import { useAppSelector } from '../../hooks/useHooks';
 
 // const ShareLib = () => {
 

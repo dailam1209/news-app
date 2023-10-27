@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, SafeAreaView, Text, TouchableOpacity, Image, ImageBackground} from 'react-native';
 import EditSVG from '../assets/misc/edit-icon.svg';
-import { useAppSelector } from '../untils/useHooks';
+import { useAppSelector } from '../hooks/useHooks';
 import { images } from '../constants';
 
 function ProfileUser({navigation}: any) {

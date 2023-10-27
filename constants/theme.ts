@@ -13,6 +13,7 @@ export const COLORS = {
     secondaryBlack: '#0F1828',
     gray: '#CCCCCC',
     secondaryGray: '#808080',
+    yellow: '#eacd17'
 }
 
 export const SIZES = {

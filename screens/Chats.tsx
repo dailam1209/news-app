@@ -44,7 +44,7 @@ const Chats: React.FC<{navigation: any}> = ({navigation}) => {
   const handleSearch = (text: string) => {
     setSearch(text);
     if (text) {
-      const filteredData = sortedChats.filter(user =>
+      const filteredData = sortedChats?.filter(user =>
         user.username.toLowerCase().includes(text.toLowerCase()),
       );
       setFilteredUsers(filteredData);

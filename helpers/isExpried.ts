@@ -9,9 +9,8 @@ export const isExpiresIn = async () => {
     let isEx =compareDate(time);
     // true or false to refresh token
     return isEx;
-  } else {
-    return '';
-  }
+  } 
+  return '';
 };
 
 export const getRefreshToken = async () => {
@@ -19,7 +18,6 @@ export const getRefreshToken = async () => {
     if (user !== null) {
       const userObj = JSON.parse(user); 
       return userObj.refreshToken;
-    } else {
-      return 0;
-    }
+    } 
+    return 0;
   };

@@ -80,10 +80,10 @@ const AddFriend = () => {
         </Animated.View>
       </View>
       {isLoading && <Loading />}
-      {valueSwitch == 1 && isLoading == false && (
+      {valueSwitch == 1 && !isLoading && (
         <RequestFriend listUser={filteredUsers} token={user?.token} />
       )}
-      {valueSwitch !== 1 && isLoading == false && (
+      {valueSwitch !== 1 && !isLoading && (
         <SentFriend listUser={filteredUsers} token={user?.token} />
       )}
     </SafeAreaView>

@@ -39,7 +39,7 @@ const AddGroup = ({ navigation }) => {
     if (!search.trim()) {
       setFilteredUsers(friends);
     } else {
-      const friendsFilter = filteredUsers.filter((user) =>
+      const friendsFilter = filteredUsers?.filter((user) =>
         user.username.includes(search),
       );
       setFilteredUsers(friendsFilter);

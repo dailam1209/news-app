@@ -9,9 +9,6 @@ import {REACT_APP_API_URL} from '@env';
 import * as ZIM from 'zego-zim-react-native';
 import * as ZPNs from 'zego-zpns-react-native';
 import ZegoUIKitPrebuiltCallService from '@zegocloud/zego-uikit-prebuilt-call-rn';
-import { requestConfig } from '../helpers/newApi';
-import { NavigationActions } from 'react-navigation';
-import axios from 'axios';
 // import  ZegoUIKitPrebuilt from '@zegocloud/zego-uikit-prebuilt';
 
 

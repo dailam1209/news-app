@@ -139,7 +139,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
         );
         const formatUser = await userWithout(user);
         dispatch(changeUser(formatUser));
-        navigation.navigate('Home');
+        navigation.navigate('BottomTabNavigation', { screen: 'Home', initial: false, });
       } else {
         setWarring(true);
         setIsLoading(false);

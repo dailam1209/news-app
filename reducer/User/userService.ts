@@ -1,5 +1,6 @@
 import axios from 'axios';
 import  {REACT_APP_API_URL}  from '@env';
+import { requestConfig } from '../../helpers/newApi';
 
 const config = (token: string) => {
   return {headers: {Authorization: `Bearer ${token}`}};
@@ -66,7 +67,8 @@ export const checkHaveRoom = async (
       const id = response?.data?.id;
       if (response.data.message !== 'Haved Room') {
         console.log(receverId, senderId, id, typeRoom);
-        await createMessageApi(receverId, senderId, id, typeRoom);
+        await createMessageApi(receverId, senderId, id, typeRoom, token);
+        await requestConfig("POST", token, null, `push-fcm/${id}`,null, null, true);
       }
       console.log('response.data', response.data);
       return id.toString(); // Trả về id dưới dạng chuỗi

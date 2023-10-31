@@ -10,6 +10,7 @@ import Eye from '../assets/misc/9041325_eye_fill_icon.svg';
 import Eye2 from '../assets/misc/9041353_eye_slash_fill_icon.svg';
 import UserSVG from '../assets/misc/4092564_profile_about_mobile ui_user_icon.svg';
 import axios from 'axios';
+import { emailRegex } from '../untils/regex'
 import { requestConfig } from '../helpers/newApi';
 
 interface RegisterProps {
@@ -96,8 +97,7 @@ const Register: React.FC<RegisterProps> = ({navigation}) => {
   };
 
   const emailOnblur = () => {
-    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
-    if (reg.test(email as string) === false) {
+    if (emailRegex.test(email as string) === false) {
       setErrorEmail('Please enter email again.')
       return false;
     }

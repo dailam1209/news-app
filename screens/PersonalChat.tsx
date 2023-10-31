@@ -45,9 +45,9 @@ import {requestConfig} from '../helpers/newApi';
 import {sendNotification} from '../helpers/sendNotification';
 import {TouchableWithoutFeedback} from 'react-native';
 import {ZegoSendCallInvitationButton} from '@zegocloud/zego-uikit-prebuilt-call-rn';
-import { changeRoom } from '../reducer/numberRedux';
-import { StackActions } from '@react-navigation/native';
-import { NavigationActions } from 'react-navigation';
+import {changeRoom} from '../reducer/numberRedux';
+import {StackActions} from '@react-navigation/native';
+import {NavigationActions} from 'react-navigation';
 
 var FormData = require('form-data');
 
@@ -57,7 +57,7 @@ interface PerrsonProps {
 }
 
 const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
-  const paramRoom = useAppSelector((state) => state.number.number);
+  const paramRoom = useAppSelector(state => state.number.number);
   const params = route.params.roomId ? route.params : paramRoom;
   const {username, reciever, roomId, imageUser, isOnline, typeRoom} = params;
   const toCall = {username, reciever, roomId, imageUser, isOnline, typeRoom};
@@ -80,28 +80,36 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [messages, setMessages] = useState([] as any);
   const [listOffline, setListOffline] = useState([] as any);
-  const [ users, setUsers] = useState<any>([])
+  const [users, setUsers] = useState<any>([]);
   const limitMessage = 15;
   const [fetchIsLoading, setFetchIsLoading] = useState(true);
-  const [listIcon, setListIcon] = useState([]);
+  const [listIcon, setListIcon] = useState([] as any);
   const [idMessage, setIdMessage] = useState<String>('');
   const isFetchNextRef = useRef(false);
   const dispatch = useAppDispatch();
-
 
   const [replyMsg, setReplyMsg] = React.useState({
     replyId: null,
     text: '',
     user: null,
     image: '',
+    icons: [] as any,
   });
 
   // api
 
   const getAllUserOfRoom = async () => {
-    const users = await requestConfig("GET", user.token, null, `get-user-room/${roomId}`, null, null, true);
-    if(users.status == 200) {
-      setUsers(users.data.users)
+    const users = await requestConfig(
+      'GET',
+      user.token,
+      null,
+      `get-user-room/${roomId}`,
+      null,
+      null,
+      true,
+    );
+    if (users.status == 200) {
+      setUsers(users.data.users);
     }
   };
 
@@ -118,12 +126,12 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
     return listUserOfflineResponse.data.listOffline;
 
     // setListOffline(() => listUserOfflineResponse.data.listOffline);
-  }
+  };
 
   const getAllChat = async () => {
     setFetchIsLoading(true);
     try {
-    //  await listUserOffline();
+      //  await listUserOffline();
 
       const messagesRoomResponse = await requestConfig(
         'POST',
@@ -222,7 +230,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
 
   // handle picture
   const handlePhotoPicker = async () => {
-    const userOff =  await listUserOffline();
+    const userOff = await listUserOffline();
     let url: any = '';
     const result = await launchImageLibrary({
       mediaType: 'photo',
@@ -289,7 +297,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         };
 
         await submitMessageData(message);
-        await sendNotification(userOff , messageFCM.messages);
+        await sendNotification(userOff, messageFCM.messages);
       }
     }
   };
@@ -332,6 +340,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
             text,
             user: props.currentMessage.user.name,
             image: image ? image : '',
+            icons,
           });
         }
       },
@@ -346,6 +355,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
             text,
             user: props.currentMessage.user.name,
             image: image ? image : '',
+            icons,
           });
         }
       },
@@ -450,7 +460,13 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           }}>
           <TouchableOpacity
             onPress={() =>
-              setReplyMsg({replyId: null, text: '', user: null, image: ''})
+              setReplyMsg({
+                replyId: null,
+                text: '',
+                user: null,
+                image: '',
+                icons,
+              })
             }>
             <Text>X</Text>
           </TouchableOpacity>
@@ -628,14 +644,14 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   // custom view text
   const renderMessageText = props => {
     return (
-      <Pressable
-        onLongPress={() => {
-          console.log('click', props.currentMessage._id);
+      <TouchableOpacity
+        onPress={() => {
+          setIdMessage('');
           setIdMessage(props.currentMessage._id);
         }}
         onPressOut={() => setIdMessage('')}>
         <CustomMessageText {...props} />
-      </Pressable>
+      </TouchableOpacity>
     );
     // if (props.currentMessage.isReply.user) {
     //   return <CustomMessageText {...props} />;
@@ -660,8 +676,8 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
   // send message with socket and save in database
   const onSendMessage = async (messages = []) => {
     const {_id, createdAt, text, user} = messages[0];
-    const userOff =  await listUserOffline();
-    console.log("userOff", userOff);
+    const userOff = await listUserOffline();
+    console.log('userOff', userOff);
     const newMessage = [
       {
         _id: _id,
@@ -706,7 +722,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
           },
         ],
       };
-      
+
       const promises = [submitMessageData(message)];
       if (userOff) {
         promises.push(sendNotification(userOff, message.messages));
@@ -721,6 +737,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
         text: '',
         user: null,
         image: '',
+        icons,
       });
     }
   };
@@ -779,19 +796,34 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               }}
               data={iconsCheck}
               renderItem={({item, index}) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    // if(listIcon.includes(icons) !== -1) {
-                    setListIcon(pre => [...pre, item]);
-                    // }
-                  }}>
-                  <View
+                <TouchableWithoutFeedback
                     style={{
-                      margin: 3.5,
+                      flex: 1,
+                      backgroundColor: 'blue',
+                    }}
+                    onPressIn={() => {
+                      console.log('aaaaaaaaaaaa');
+                      // console.log('listIcon.includes(icons) !== -1', listIcon.includes(icons) !== -1);
+                      // if(listIcon.includes(icons) !== -1) {
+                        // setListIcon((pre: any) => [...pre, item]);
+                      // setReplyMsg({
+                      //     replyId: null,
+                      //   text: '',
+                      //   user,
+                      //   image: '',
+                      //   icons: icons.push(iconsCheck[index]),
+                      // });
+                      // console.log('listIcon', listIcon);
+                      // }
                     }}>
-                    {item}
-                  </View>
-                </TouchableOpacity>
+                        <View
+                          style={{
+                            margin: 3.5,
+                          }}>
+                    {/* {item} */}
+                    <TongueSVG width={16} height={16} />
+                </View>
+                  </TouchableWithoutFeedback>
               )}
             />
             <View style={styles.triangle}></View>
@@ -814,7 +846,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
               width: 60,
               height: 18,
             }}
-            data={listIcon}
+            data={replyMsg.icons}
             renderItem={({item, index}) => (
               <View
                 style={[
@@ -884,7 +916,7 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
 
   useEffect(() => {
     (async () => {
-      if(route.params.roomId) {
+      if (route.params.roomId) {
         dispatch(changeRoom(route.params));
       } else {
         dispatch(changeRoom(paramRoom));
@@ -921,102 +953,111 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
     <>
       <SafeAreaView style={styles.container}>
         {/* <StatusBar style="light" backgroundColor={COLORS.yellow} /> */}
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-
-        <View style={{
-          flex: 1
-        }}>
-
-          <View style={{ overflow: 'hidden', paddingBottom: 3 }}>
-
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                paddingHorizontal: 16,
-                backgroundColor: COLORS.white,
-                height: 60,
-                elevation: 3,
-              }}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            Keyboard.dismiss();
+            setIdMessage('');
+          }}>
+          <View
+            style={{
+              flex: 1,
+            }}>
+            <View style={{overflow: 'hidden', paddingBottom: 3}}>
               <View
                 style={{
                   flexDirection: 'row',
-                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingHorizontal: 16,
+                  backgroundColor: COLORS.white,
+                  height: 60,
+                  elevation: 3,
                 }}>
-                <TouchableOpacity
-                  onPress={async () => {
-                    socket.emit('leave_room', {
-                      username: user.username,
-                      room: roomId,
-                    });
-                    navigation.navigate('BottomTabNavigation', { screen: 'Chats', initial: false, });
-                    await requestConfig(
-                      'POST',
-                      user.token,
-                      '',
-                      `api/left-room/${roomId}`,
-                      {
-                        fcmToken: user.fcmToken,
-                      },
-                      null,
-                      true,
-                    );
-                  }}>
-                  <LeftSVG width={20} height={18} />
-                </TouchableOpacity>
                 <View
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    marginLeft: 14,
-                    borderRadius: '2px',
                   }}>
-                  <Image
-                    source={
-                      imageUser
-                        ? {uri: imageUser}
-                        : {
-                            uri: 'https://hope.be/wp-content/uploads/2015/05/no-user-image.gif',
-                          }
-                      // UserImage
-                    }
-                    resizeMode="contain"
+                  <TouchableOpacity
+                    onPress={async () => {
+                      socket.emit('leave_room', {
+                        username: user.username,
+                        room: roomId,
+                      });
+                      navigation.navigate('BottomTabNavigation', {
+                        screen: 'Chats',
+                        initial: false,
+                      });
+                      await requestConfig(
+                        'POST',
+                        user.token,
+                        '',
+                        `api/left-room/${roomId}`,
+                        {
+                          fcmToken: user.fcmToken,
+                        },
+                        null,
+                        true,
+                      );
+                    }}>
+                    <LeftSVG width={20} height={18} />
+                  </TouchableOpacity>
+                  <View
                     style={{
-                      height: 40,
-                      width: 40,
-                      borderRadius: 20,
-                      borderWidth: 2,
-                      borderColor: '#ccc',
-                    }}
-                  />
-                  <View>
-                    <Text style={{...FONTS.h4, marginLeft: 8}}>{username}</Text>
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginLeft: 14,
+                      borderRadius: '2px',
+                    }}>
+                    <Image
+                      source={
+                        imageUser
+                          ? {uri: imageUser}
+                          : {
+                              uri: 'https://hope.be/wp-content/uploads/2015/05/no-user-image.gif',
+                            }
+                        // UserImage
+                      }
+                      resizeMode="contain"
+                      style={{
+                        height: 40,
+                        width: 40,
+                        borderRadius: 20,
+                        borderWidth: 2,
+                        borderColor: '#ccc',
+                      }}
+                    />
                     <View>
-                      <View
-                        style={{
-                          width: 6,
-                          height: 6,
-                          backgroundColor: isOnline ? COLORS.green : COLORS.gray,
-                          top: '52%',
-                          marginLeft: 6,
-                          marginRight: 4,
-                          borderRadius: 3,
-                        }}></View>
-                      <Text style={{...FONTS.h5, marginLeft: 16}}>
-                        {isOnline ? 'Online' : 'Offline'}
+                      <Text style={{...FONTS.h4, marginLeft: 8}}>
+                        {username}
                       </Text>
+                      <View>
+                        <View
+                          style={{
+                            width: 6,
+                            height: 6,
+                            backgroundColor: isOnline
+                              ? COLORS.green
+                              : COLORS.gray,
+                            top: '52%',
+                            marginLeft: 6,
+                            marginRight: 4,
+                            borderRadius: 3,
+                          }}></View>
+                        <Text style={{...FONTS.h5, marginLeft: 16}}>
+                          {isOnline ? 'Online' : 'Offline'}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
 
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  zIndex: 100,
-                }}>
-                {/* <TouchableOpacity
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    zIndex: 100,
+                  }}>
+                  {/* <TouchableOpacity
                   onPress={() => {
                     navigation.navigate('CallVideo', toCall);
                   }}
@@ -1026,83 +1067,89 @@ const PersonalChat: React.FC<PerrsonProps> = ({route, navigation}) => {
                   <CallSVG width={24} height={30} color={COLORS.primary} />
                 </TouchableOpacity> */}
 
-                <View>
-                  <ZegoSendCallInvitationButton
-                    invitees={users.map((inviteeID) => {
-                      return { userID: inviteeID._id, userName: 'user_' + inviteeID.username };
-                    })} 
-                    isVideoCall={false}
-                    resourceID={'zegouikit_call'} // For offline call notification
-                  />
+                  <View>
+                    <ZegoSendCallInvitationButton
+                      invitees={users.map(inviteeID => {
+                        return {
+                          userID: inviteeID._id,
+                          userName: 'user_' + inviteeID.username,
+                        };
+                      })}
+                      isVideoCall={false}
+                      resourceID={'zegouikit_call'} // For offline call notification
+                    />
+                  </View>
+                  <View
+                    style={{
+                      marginLeft: 16,
+                    }}>
+                    <ZegoSendCallInvitationButton
+                      invitees={users.map(inviteeID => {
+                        return {
+                          userID: inviteeID._id,
+                          userName: 'user_' + inviteeID.username,
+                        };
+                      })}
+                      isVideoCall={true}
+                      resourceID={'zegouikit_call'} // For offline call notification
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {}}
+                    style={{
+                      marginLeft: 10,
+                    }}>
+                    <MenuSVG width={24} height={30} color={COLORS.primary} />
+                  </TouchableOpacity>
                 </View>
-                <View
-                  style={{
-                    marginLeft: 16,
-                  }}>
-                  <ZegoSendCallInvitationButton
-                  invitees={users.map((inviteeID) => {
-                    return { userID: inviteeID._id, userName: 'user_' + inviteeID.username };
-                  })} 
-                    isVideoCall={true}
-                    resourceID={'zegouikit_call'} // For offline call notification
-                  />
-                </View>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  style={{
-                    marginLeft: 10,
-                  }}>
-                  <MenuSVG width={24} height={30} color={COLORS.primary} />
-                </TouchableOpacity>
               </View>
             </View>
-          </View>
 
-          <View style={{flex: 1, backgroundColor: '#fff'}}>
-            <GiftedChat
-              messages={messages}
-              onSend={messages => onSendMessage(messages as any)}
-              user={{
-                _id: user._id,
-                name: user.username,
-                avatar: user.image,
-              }}
-              renderBubble={renderBubble}
-              renderInputToolbar={renderInputToolbar}
-              alwaysShowSend
-              showAvatarForEveryMessage={true}
-              // show avatar
-              shouldUpdateMessage={() => (typeRoom ? false : true)}
-              renderAvatar={renderAvatar}
-              renderSend={renderSend}
-              renderMessageText={renderMessageText}
-              renderTicks={renderTicks}
-              infiniteScroll
-              scrollToBottom={true}
-              scrollToBottomOffset={500}
-              scrollToBottomComponent={renderScrollToBottomWrapper}
-              loadEarlier={fetchIsLoading}
-              // isKeyboardInternallyHandled={false}
-              listViewProps={{
-                scrollEventThrottle: 400,
-                onScroll: async ({nativeEvent}) => {
-                  if (isCloseToTop(nativeEvent)) {
-                    setFetchIsLoading(true);
-                    if (!fetchIsLoading && isFetchNextRef.current == false) {
-                      await isLoadingMessage(limitMessage, currentPage);
+            <View style={{flex: 1, backgroundColor: '#fff'}}>
+              <GiftedChat
+                messages={messages}
+                onSend={messages => onSendMessage(messages as any)}
+                user={{
+                  _id: user._id,
+                  name: user.username,
+                  avatar: user.image,
+                }}
+                renderBubble={renderBubble}
+                renderInputToolbar={renderInputToolbar}
+                alwaysShowSend
+                showAvatarForEveryMessage={true}
+                // show avatar
+                shouldUpdateMessage={() => (typeRoom ? false : true)}
+                renderAvatar={renderAvatar}
+                renderSend={renderSend}
+                renderMessageText={renderMessageText}
+                renderTicks={renderTicks}
+                infiniteScroll
+                scrollToBottom={true}
+                scrollToBottomOffset={500}
+                scrollToBottomComponent={renderScrollToBottomWrapper}
+                loadEarlier={fetchIsLoading}
+                // isKeyboardInternallyHandled={false}
+                listViewProps={{
+                  scrollEventThrottle: 400,
+                  onScroll: async ({nativeEvent}) => {
+                    if (isCloseToTop(nativeEvent)) {
+                      setFetchIsLoading(true);
+                      if (!fetchIsLoading && isFetchNextRef.current == false) {
+                        await isLoadingMessage(limitMessage, currentPage);
+                      }
                     }
-                  }
-                },
-              }}
-            />
-            <View
-              style={{
-                height: '1%',
-                width: '100%',
-              }}
-            />
+                  },
+                }}
+              />
+              <View
+                style={{
+                  height: '1%',
+                  width: '100%',
+                }}
+              />
+            </View>
           </View>
-        </View>
         </TouchableWithoutFeedback>
       </SafeAreaView>
     </>
